@@ -73,6 +73,10 @@ struct HomebrewOutdatedPackage: Identifiable, Hashable, Sendable {
     let isPinned: Bool
 
     var id: String { "\(kind.rawValue):\(name)" }
+
+    var upgradeCommand: String {
+        kind == .cask ? "brew upgrade --cask \(name)" : "brew upgrade \(name)"
+    }
 }
 
 struct HomebrewInstallation: Equatable {

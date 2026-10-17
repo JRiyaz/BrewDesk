@@ -6,6 +6,20 @@ struct InstalledView: View {
     @State private var selectedFilter: InstalledFilter = .all
     @State private var showDirectOnly = false
     @State private var refreshGeneration = 0
+    @State private var hasCopiedCommand = false
+
+    private var currentBrewCommand: String {
+        switch selectedFilter {
+        case .services:
+            return "brew services list"
+        case .formulae:
+            return showDirectOnly ? "brew leaves" : "brew list --formula"
+        case .casks:
+            return "brew list --cask"
+        case .all:
+            return showDirectOnly ? "brew leaves" : "brew list"
+        }
+    }
 
     private var filteredPackages: [HomebrewPackage] {
         homebrew.packages.filter { package in
@@ -69,13 +83,34 @@ struct InstalledView: View {
                     ProgressView()
                         .controlSize(.small)
                         .accessibilityLabel("Loading")
-                } else if homebrew.installation != nil {
-                    StatusPill(title: "CONNECTED", symbol: "checkmark.circle.fill", tint: AppTheme.success)
-                } else if homebrew.packagesError != nil || homebrew.servicesError != nil {
-                    StatusPill(title: "UNAVAILABLE", symbol: "exclamationmark.triangle.fill", tint: AppTheme.warning)
-                } else {
-                    StatusPill(title: "NOT LOADED", symbol: "circle.dashed", tint: .secondary)
                 }
+
+                Button {
+                    if ClipboardService.copy(currentBrewCommand) {
+                        hasCopiedCommand = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            hasCopiedCommand = false
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: hasCopiedCommand ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 11))
+                            .foregroundStyle(hasCopiedCommand ? AppTheme.success : AppTheme.accent)
+                        Text(hasCopiedCommand ? "Copied" : currentBrewCommand)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(hasCopiedCommand ? AppTheme.success : .primary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(hasCopiedCommand ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help("Copy command to clipboard: \(currentBrewCommand)")
 
                 Button {
                     refreshGeneration += 1
@@ -124,7 +159,7 @@ struct InstalledView: View {
                 await homebrew.loadInstalledPackages()
             }
         }
-        .onChange(of: selectedFilter) { newFilter in
+        .onChange(of: selectedFilter) { _, newFilter in
             if newFilter == .services && !homebrew.hasLoadedServices {
                 Task { await homebrew.loadServices() }
             } else if newFilter != .services && !homebrew.hasLoadedPackages {

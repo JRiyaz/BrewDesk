@@ -3,6 +3,7 @@ import SwiftUI
 struct UpdatesView: View {
     @ObservedObject var homebrew: HomebrewStore
     @State private var refreshGeneration = 0
+    @State private var copiedPackageID: String?
 
     private var formulaOutdatedCount: Int {
         homebrew.outdatedPackages.filter { $0.kind == .formula }.count
@@ -98,10 +99,11 @@ struct UpdatesView: View {
                 HStack {
                     Text("PACKAGE")
                     Spacer(minLength: 12)
-                    Text("TYPE").frame(width: 80, alignment: .leading)
-                    Text("CURRENT").frame(width: 120, alignment: .leading)
-                    Text("LATEST").frame(width: 120, alignment: .leading)
-                    Text("ACTION").frame(width: 90, alignment: .trailing)
+                    Text("TYPE").frame(width: 75, alignment: .leading)
+                    Text("CURRENT").frame(width: 95, alignment: .leading)
+                    Text("LATEST").frame(width: 95, alignment: .leading)
+                    Text("COMMAND").frame(width: 200, alignment: .leading)
+                    Text("ACTION").frame(width: 85, alignment: .trailing)
                 }
                 .font(.system(size: 9, weight: .bold))
                 .tracking(0.7)
@@ -152,14 +154,14 @@ struct UpdatesView: View {
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 5)
                                     .background(AppTheme.subtleFill, in: Capsule())
-                                    .frame(width: 80, alignment: .leading)
+                                    .frame(width: 75, alignment: .leading)
 
                                 Text(package.installedVersion)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                    .frame(width: 120, alignment: .leading)
+                                    .frame(width: 95, alignment: .leading)
 
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.right")
@@ -171,7 +173,39 @@ struct UpdatesView: View {
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                 }
-                                .frame(width: 120, alignment: .leading)
+                                .frame(width: 95, alignment: .leading)
+
+                                Button {
+                                    if ClipboardService.copy(package.upgradeCommand) {
+                                        copiedPackageID = package.id
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                            if copiedPackageID == package.id {
+                                                copiedPackageID = nil
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: copiedPackageID == package.id ? "checkmark" : "doc.on.doc")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(copiedPackageID == package.id ? AppTheme.success : AppTheme.accent)
+                                        Text(copiedPackageID == package.id ? "Copied" : package.upgradeCommand)
+                                            .font(.system(size: 10, design: .monospaced))
+                                            .foregroundStyle(copiedPackageID == package.id ? AppTheme.success : .primary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .strokeBorder(copiedPackageID == package.id ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .help("Copy update command: \(package.upgradeCommand)")
+                                .frame(width: 200, alignment: .leading)
 
                                 HStack {
                                     if homebrew.updatingPackage == package.name {
@@ -188,7 +222,7 @@ struct UpdatesView: View {
                                         .disabled(homebrew.isUpgradingAll || homebrew.updatingPackage != nil)
                                     }
                                 }
-                                .frame(width: 90, alignment: .trailing)
+                                .frame(width: 85, alignment: .trailing)
                             }
                             .padding(.horizontal, 18)
                             .padding(.vertical, 12)

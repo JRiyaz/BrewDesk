@@ -51,6 +51,7 @@ struct SettingsView: View {
                     TextField("/opt/homebrew/bin/brew", text: $customHomebrewPath)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 11, design: .monospaced))
+                        .autocorrectionDisabled()
                     Text("Leave blank to check standard locations and the app’s PATH. Use the full executable path if Homebrew is installed elsewhere.")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)

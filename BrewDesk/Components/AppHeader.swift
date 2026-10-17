@@ -27,6 +27,7 @@ struct AppHeader: View {
                     TextField("Search \(section.title.lowercased())", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
+                        .autocorrectionDisabled()
                         .accessibilityLabel("Search \(section.title)")
                     if !searchText.isEmpty {
                         Button {

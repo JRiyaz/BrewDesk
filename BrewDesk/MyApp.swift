@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @main
-struct BrewDeskApp: App {
+struct MyApp: App {
     @NSApplicationDelegateAdaptor(AppLifecycle.self) private var appLifecycle
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
 
@@ -27,3 +27,5 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
         true
     }
 }
+
+typealias BrewDeskApp = MyApp
