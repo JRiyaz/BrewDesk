@@ -1,114 +1,114 @@
 # BrewDesk
 
-BrewDesk is a lightweight native macOS utility app for managing Homebrew and a small set of system tools. It is built with Swift and SwiftUI, with AppKit used only where macOS integration requires it.
+BrewDesk is a modern, native macOS utility for managing Homebrew packages, background services, listening network ports, and system storage hygiene. Built with Swift and SwiftUI, it delivers a fast, transparent, and local-first Mac developer experience with native glass styling.
 
-## Goals
+---
 
-- **Native macOS experience:** a clean, adaptive interface with selective Liquid Glass styling.
-- **Light and dark appearance:** supports System, Light, and Dark modes.
-- **Lightweight and idle when closed:** no login item, LaunchAgent, LaunchDaemon, menu-bar resident agent, recurring timer, or polling loop.
-- **Transparent actions:** show command previews and allow copying commands without executing them.
-- **Safe by default:** review and confirm destructive actions, avoid silent privilege escalation, and explain permission limits.
-- **Local-first:** no account, telemetry, or analytics by default.
+## Features
 
-## Current Status
+### 🍺 Homebrew Workspace
+- **Overview:** System status snapshot, installed packages, available updates, and fast navigation across your developer toolkit.
+- **Installed Packages:**
+  - Fast search and inspection of installed formulae and casks.
+  - Toggle between **Direct only** (top-level leaf packages) and all packages (including transitive dependencies).
+  - Copy individual install/list commands directly to the clipboard.
+- **Background Services:**
+  - List and inspect background services configured via Homebrew (e.g. Redis, PostgreSQL, MySQL, Nginx).
+  - 1-click **Start** and **Stop** buttons with live status tracking.
+  - Copy dynamic service commands (`brew services start <name>`, `brew services stop <name>`).
+- **Discover (Catalogue Search):**
+  - Live catalogue search across Homebrew **Formulae** and **Casks**.
+  - Install status indicators (**Installed**, **Available**, **Disabled**).
+  - 1-click package installation with progress indicator and terminal copy command.
+- **Updates:**
+  - Real-time check for outdated formulae and casks via Homebrew API.
+  - Per-package version comparison (Installed vs. Latest).
+  - Upgrade individual packages or **Upgrade all** at once.
+  - Copy upgrade commands to clipboard.
+- **Homebrew Cleaner:**
+  - **Autoremove:** Dry-run and uninstall orphaned dependencies (`brew autoremove`).
+  - **Clean:** Preview and delete outdated package versions and stale lockfiles (`brew cleanup`).
+  - **Purge Cache:** Inspect the full bottle archive cache in `~/Library/Caches/Homebrew` and purge all archives (`brew cleanup --prune=all`) to reclaim disk space.
+- **Command Reference:**
+  - Curated catalogue of essential Homebrew commands with instant search and 1-click clipboard copying.
 
-The current project is the initial UI/design shell.
+### 🛠️ Utilities
+- **Listening Ports:**
+  - Real-time inspection of active TCP listening ports on your Mac using `lsof`.
+  - Filter by **All**, **User / Apps** (e.g. Angular, Vite, Node, Flask), or **System daemons**.
+  - Shows process name, PID, user, protocol, and bound address.
+  - Safe process termination with confirmation modal and copy kill commands.
+- **System Cleaner:**
+  - Reclaim gigabytes of disk space across macOS user caches, application logs, and developer stores.
+  - Targets **Xcode DerivedData**, **macOS Trash**, **User App Caches**, **Application Logs**, **NPM Cache**, **SwiftPM Cache**, and **Pip Cache**.
+  - Filter by Developer vs. System caches, with safe clean actions and copyable `rm -rf` terminal commands.
 
-### Available in the design shell
+### ⚙️ Settings
+- Automatic detection of Apple Silicon (`/opt/homebrew`) and Intel (`/usr/local`) Homebrew installations.
+- Custom Homebrew executable path configuration with instant validation.
+- Appearance preferences: System, Light, and Dark modes.
 
-- Sidebar navigation for Overview, Installed, Discover, Updates, Cleaner, Ports, Commands, and Settings.
-- Custom BrewDesk beer-mug app icon in `Assets.xcassets/AppIcon.appiconset`, with standard macOS icon sizes.
-- System, Light, and Dark appearance preferences.
-- Curated Homebrew command reference with search and copy-to-clipboard actions.
-- Preview, empty, and informational states for features that are not yet connected to system services.
-- Foreground application lifecycle intended to quit when the last window is closed.
+---
 
-### Not implemented yet
+## Design & Architecture
 
-These screens are not yet connected to their real system operations:
+- **Local-first & Idle When Closed:** No login items, background launch daemons, telemetry, or analytics.
+- **Process Safety:** Process runner uses explicit executable paths, argument arrays, timeouts, and process tree termination on task cancellation.
+- **Copy-First Workflow:** Every action includes a 1-click clipboard copy icon for CLI transparency.
+- **Aesthetic Excellence:** Curated macOS dark/light mode palette, SF Symbols, and continuous rounded surfaces.
 
-- Listing installed Homebrew formulae and casks.
-- Searching the online Homebrew catalogue.
-- Checking or installing updates.
-- Managing Homebrew services.
-- Scanning or removing cache/log/app-leftover files.
-- Discovering listening ports or terminating processes.
+---
 
-Do not treat preview screens as proof that those operations are working. Implement and test each service before exposing real system-changing actions.
-
-## Requirements
-
-- A Mac running a compatible version of macOS.
-- Xcode and the macOS SDK compatible with the project's deployment target.
-- Homebrew installed for Homebrew-specific features once those integrations are implemented.
-
-The project currently targets macOS 27. Confirm that the installed Xcode version provides a compatible SDK before building.
-
-## Open the Project
-
-1. Extract or clone the repository on your Mac.
-2. Open `BrewDesk.xcodeproj` in Xcode.
-3. Select the `BrewDesk` scheme.
-4. Check the deployment target and signing settings.
-5. Replace the placeholder bundle identifier `com.example.brewdesk` with your own reverse-DNS identifier before distribution.
-6. Build and run the app.
-
-## Development Principles
-
-- Prefer Swift, SwiftUI, Foundation, and system frameworks over unnecessary third-party dependencies.
-- Keep views focused on presentation; isolate process execution and system access in testable services.
-- Launch known executables using explicit paths and argument arrays; avoid shell interpolation.
-- Do not silently request elevated privileges or broad privacy permissions.
-- Do not add persistent background work unless the product requirements explicitly change.
-- Cancel app-owned work and clean up child processes when the app quits.
-- Use conservative allowlists, path validation, review screens, and confirmation for cleanup operations.
-- Start process termination with graceful termination and clearly separate any force-termination option.
-- Support accessibility settings, keyboard navigation, and semantic system colors.
-
-## Suggested Source Organization
+## Project Structure
 
 ```text
 BrewDesk/
+├── MyApp.swift                      # Main application entry point & lifecycle
 ├── App/
+│   ├── AppSection.swift             # Sidebar navigation definitions & groups
+│   └── ContentView.swift            # Root layout & page routing
 ├── Components/
-├── DesignSystem/
-├── Features/
-│   ├── Overview/
-│   ├── Installed/
-│   ├── Discover/
-│   ├── Updates/
-│   ├── Services/
-│   ├── Cleaner/
-│   ├── Ports/
-│   ├── Commands/
-│   └── Settings/
-├── Domain/
+│   ├── AppHeader.swift              # Unified search header & settings button
+│   ├── AppSidebar.swift             # Glassmorphic sidebar navigation
+│   └── CommonUI.swift               # Reusable UI tokens, cards, and buttons
 ├── Services/
-├── Resources/
-├── Tests/
-└── Docs/
+│   ├── HomebrewClient.swift         # Process execution & Homebrew CLI wrapper
+│   ├── HomebrewStore.swift          # Reactive state store for packages & services
+│   ├── HomebrewModels.swift         # Data models for formulae, casks, and services
+│   ├── PortScannerService.swift     # Port scanning & process termination service
+│   ├── CleanerService.swift         # Homebrew cleanup dry-run & cache manager
+│   ├── SystemCleanerService.swift   # macOS storage & developer cache scanner
+│   ├── ProcessRunner.swift          # Non-blocking async process execution
+│   └── ClipboardService.swift       # Pasteboard copy utilities
+├── Theme/
+│   └── AppTheme.swift               # Design tokens, materials, and colors
+└── Views/
+    ├── OverviewView.swift           # Dashboard view
+    ├── InstalledView.swift          # Formulae, casks, and background services
+    ├── DiscoverView.swift           # Online catalogue search
+    ├── UpdatesView.swift            # Package update manager
+    ├── CleanerView.swift            # 3-section Homebrew cleaner
+    ├── PortsView.swift              # Listening ports inspector
+    ├── SystemCleanerView.swift      # Mac system & developer storage cleaner
+    ├── CommandsView.swift           # CLI commands reference
+    └── SettingsView.swift           # Configuration & path validation
 ```
 
-This is a suggested organization. Add directories and abstractions when they provide a useful boundary; do not create empty modules just to match the tree.
+---
 
-## Build and Test
+## Requirements & Building
 
-Open the project in Xcode and build the `BrewDesk` scheme.
+- **macOS:** 14.0 or later (Apple Silicon or Intel).
+- **Xcode:** 16.0 or later.
+- **Homebrew:** Installed locally at standard paths (`/opt/homebrew` or `/usr/local`) or configured via Settings.
 
-Before considering a feature complete, verify:
+### Building in Xcode
+1. Open `BrewDesk.xcodeproj` in Xcode.
+2. Select the `BrewDesk` scheme and target `My Mac`.
+3. Press `Cmd + R` to build and run.
 
-- System, Light, and Dark appearances.
-- Window close and `⌘Q` quit behavior.
-- Loading, empty, success, and error states.
-- Cancellation and cleanup of app-owned tasks/processes.
-- Permission-denied behavior.
-- Unit and UI tests for critical flows.
-
-## Privacy
-
-BrewDesk is intended to be local-first. It should not collect telemetry or analytics by default. Network access should occur only for explicit online catalogue searches or user-requested Homebrew operations that need it.
+---
 
 ## License
 
-Add or update the repository's `LICENSE` file before publishing or distributing BrewDesk.
+MIT License. See `LICENSE` for details.

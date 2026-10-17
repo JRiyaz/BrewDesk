@@ -196,7 +196,7 @@ struct UpdatesView: View {
                                         )
                                 }
                                 .buttonStyle(.plain)
-                                .help(copiedPackageID == package.id ? "Copied!" : "Copy update command: \(package.upgradeCommand)")
+                                .help(Text(verbatim: copiedPackageID == package.id ? "Copied!" : "Copy update command: \(package.upgradeCommand)"))
                                 .frame(width: 80, alignment: .center)
 
                                 HStack {

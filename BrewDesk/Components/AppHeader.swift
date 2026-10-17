@@ -58,7 +58,7 @@ struct AppHeader: View {
                     .overlay(Circle().strokeBorder(AppTheme.separator, lineWidth: 0.8))
             }
             .buttonStyle(.plain)
-            .help("Settings")
+            .help(Text(verbatim: "Settings"))
             .accessibilityLabel("Open Settings")
             .disabled(section == .settings)
             .opacity(section == .settings ? 0.45 : 1)

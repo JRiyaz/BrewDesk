@@ -166,7 +166,7 @@ struct DiscoverView: View {
                                         )
                                 }
                                 .buttonStyle(.plain)
-                                .help(copiedResultID == item.id ? "Copied!" : "Copy install command: \(item.installCommand)")
+                                .help(Text(verbatim: copiedResultID == item.id ? "Copied!" : "Copy install command: \(item.installCommand)"))
                                 .frame(width: 80, alignment: .center)
 
                                 HStack {

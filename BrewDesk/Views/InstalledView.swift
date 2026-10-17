@@ -3,11 +3,21 @@ import SwiftUI
 struct InstalledView: View {
     let searchText: String
     @ObservedObject var homebrew: HomebrewStore
-    @State private var selectedFilter: InstalledFilter = .all
+    @Binding var selectedFilter: InstalledFilter
     @State private var showDirectOnly = false
     @State private var refreshGeneration = 0
     @State private var hasCopiedCommand = false
     @State private var copiedServiceID: String?
+
+    init(
+        searchText: String,
+        homebrew: HomebrewStore,
+        selectedFilter: Binding<InstalledFilter> = .constant(.all)
+    ) {
+        self.searchText = searchText
+        self.homebrew = homebrew
+        self._selectedFilter = selectedFilter
+    }
 
     private var currentBrewCommand: String {
         switch selectedFilter {
@@ -75,7 +85,7 @@ struct InstalledView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(showDirectOnly ? AppTheme.accent : nil)
-                    .help(showDirectOnly ? "Showing direct/top-level apps only. Click to view all packages including dependencies." : "Click to view direct apps instead of transitive dependencies.")
+                    .help(Text(verbatim: showDirectOnly ? "Showing direct/top-level apps only. Click to view all packages including dependencies." : "Click to view direct apps instead of transitive dependencies."))
                 }
 
                 Spacer(minLength: 10)
@@ -105,7 +115,7 @@ struct InstalledView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .help(hasCopiedCommand ? "Copied!" : "Copy command: \(currentBrewCommand)")
+                .help(Text(verbatim: hasCopiedCommand ? "Copied!" : "Copy command: \(currentBrewCommand)"))
 
                 Button {
                     refreshGeneration += 1
@@ -114,7 +124,7 @@ struct InstalledView: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(homebrew.isLoadingPackages || homebrew.isLoadingServices)
-                .help("Reload local package and service data")
+                .help(Text(verbatim: "Reload local package and service data"))
             }
 
             if let error = selectedFilter == .services ? homebrew.servicesError : homebrew.packagesError {
@@ -138,6 +148,13 @@ struct InstalledView: View {
             if selectedFilter == .services {
                 await homebrew.loadServices()
             } else {
+                await homebrew.loadInstalledPackages()
+            }
+        }
+        .task(id: selectedFilter) {
+            if selectedFilter == .services && !homebrew.hasLoadedServices {
+                await homebrew.loadServices()
+            } else if selectedFilter != .services && !homebrew.hasLoadedPackages {
                 await homebrew.loadInstalledPackages()
             }
         }
@@ -351,7 +368,7 @@ struct InstalledView: View {
                                     )
                             }
                             .buttonStyle(.plain)
-                            .help(copiedServiceID == service.id ? "Copied!" : "Copy command: \(serviceCommand)")
+                            .help(Text(verbatim: copiedServiceID == service.id ? "Copied!" : "Copy command: \(serviceCommand)"))
                             .frame(width: 80, alignment: .center)
 
                             HStack {
@@ -408,7 +425,7 @@ struct InstalledView: View {
     }
 }
 
-private enum InstalledFilter: String, CaseIterable, Identifiable, Hashable {
+enum InstalledFilter: String, CaseIterable, Identifiable, Hashable {
     case all, formulae, casks, services
     var id: String { rawValue }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var selection: AppSection = .overview
     @State private var searchText = ""
+    @State private var installedFilter: InstalledFilter = .all
     @StateObject private var homebrew = HomebrewStore()
 
     var body: some View {
@@ -33,6 +34,20 @@ struct ContentView: View {
         .navigationSplitViewStyle(.balanced)
         .frame(minWidth: 980, minHeight: 680)
         .background(AppTheme.canvas)
+        .onChange(of: selection) { _, newSelection in
+            if newSelection == .services {
+                installedFilter = .services
+            } else if newSelection == .installed && installedFilter == .services {
+                installedFilter = .all
+            }
+        }
+        .onChange(of: installedFilter) { _, newFilter in
+            if newFilter == .services && selection == .installed {
+                selection = .services
+            } else if newFilter != .services && selection == .services {
+                selection = .installed
+            }
+        }
     }
 
     @ViewBuilder
@@ -40,16 +55,18 @@ struct ContentView: View {
         switch selection {
         case .overview:
             OverviewView(onNavigate: navigate, homebrew: homebrew)
-        case .installed:
-            InstalledView(searchText: searchText, homebrew: homebrew)
+        case .installed, .services:
+            InstalledView(searchText: searchText, homebrew: homebrew, selectedFilter: $installedFilter)
         case .discover:
             DiscoverView(searchText: searchText, homebrew: homebrew)
         case .updates:
             UpdatesView(homebrew: homebrew)
         case .cleaner:
-            CleanerView()
+            CleanerView(homebrew: homebrew)
         case .ports:
             PortsView(searchText: searchText)
+        case .systemCleaner:
+            SystemCleanerView(searchText: searchText)
         case .commands:
             CommandsView(searchText: searchText)
         case .settings:
@@ -60,5 +77,10 @@ struct ContentView: View {
     private func navigate(to section: AppSection) {
         searchText = ""
         selection = section
+        if section == .services {
+            installedFilter = .services
+        } else if section == .installed && installedFilter == .services {
+            installedFilter = .all
+        }
     }
 }

@@ -47,40 +47,20 @@ struct OverviewView: View {
             }
 
             VStack(alignment: .leading, spacing: 13) {
-                SectionCaption(title: "Your toolkit", trailing: "6 tools")
+                SectionCaption(title: "Your toolkit", trailing: "8 tools")
                 LazyVGrid(columns: featureColumns, alignment: .leading, spacing: 12) {
                     FeatureTile(section: .installed, detail: "Browse formulae and casks installed locally") { onNavigate(.installed) }
+                    FeatureTile(section: .services, detail: "Manage background services and daemons") { onNavigate(.services) }
                     FeatureTile(section: .discover, detail: "Search the online Homebrew catalogue") { onNavigate(.discover) }
                     FeatureTile(section: .updates, detail: "Review pending package updates") { onNavigate(.updates) }
                     FeatureTile(section: .cleaner, detail: "Review caches and leftovers safely") { onNavigate(.cleaner) }
-                    FeatureTile(section: .ports, detail: "Inspect listening ports and owners") { onNavigate(.ports) }
                     FeatureTile(section: .commands, detail: "Browse and copy common commands") { onNavigate(.commands) }
+                    FeatureTile(section: .ports, detail: "Inspect listening ports and owners") { onNavigate(.ports) }
+                    FeatureTile(section: .systemCleaner, detail: "Reclaim space from logs, Trash, and Xcode") { onNavigate(.systemCleaner) }
                 }
             }
 
-            VStack(alignment: .leading, spacing: 13) {
-                SectionCaption(title: "Recent activity", trailing: "This session")
-                HStack(spacing: 14) {
-                    Image(systemName: homebrew.installation == nil ? "clock.arrow.circlepath" : "checkmark.circle")
-                        .font(.system(size: 18, weight: .light))
-                        .foregroundStyle(homebrew.installation == nil ? Color.secondary : AppTheme.success)
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(homebrew.installation?.version ?? (homebrew.installationError == nil ? "Ready to check Homebrew" : "Homebrew needs attention"))
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(homebrew.installation?.executablePath ?? "Only a user-triggered local version check runs here; no recurring refresh is scheduled.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .textSelection(.enabled)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(16)
-                .background(AppTheme.panel, in: AppTheme.cardShape)
-                .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
-            }
+
         }
         .task(id: checkGeneration) {
             if checkGeneration > 0 || (homebrew.installation == nil && homebrew.installationError == nil) {

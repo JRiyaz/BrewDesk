@@ -26,8 +26,8 @@ struct AppSidebar: View {
             .padding(.top, 6)
 
             VStack(alignment: .leading, spacing: 6) {
-                SidebarGroupLabel(title: "WORKSPACE")
-                ForEach(AppSection.workspace) { section in
+                SidebarGroupLabel(title: "HOMEBREW")
+                ForEach(AppSection.homebrew) { section in
                     SidebarItem(section: section, isSelected: selection == section) {
                         selection = section
                     }
