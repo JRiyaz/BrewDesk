@@ -7,6 +7,7 @@ struct InstalledView: View {
     @State private var showDirectOnly = false
     @State private var refreshGeneration = 0
     @State private var hasCopiedCommand = false
+    @State private var copiedServiceID: String?
 
     private var currentBrewCommand: String {
         switch selectedFilter {
@@ -93,24 +94,18 @@ struct InstalledView: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: hasCopiedCommand ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 11))
-                            .foregroundStyle(hasCopiedCommand ? AppTheme.success : AppTheme.accent)
-                        Text(hasCopiedCommand ? "Copied" : currentBrewCommand)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(hasCopiedCommand ? AppTheme.success : .primary)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(hasCopiedCommand ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
-                    )
+                    Image(systemName: hasCopiedCommand ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 11))
+                        .foregroundStyle(hasCopiedCommand ? AppTheme.success : AppTheme.accent)
+                        .frame(width: 28, height: 28)
+                        .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(hasCopiedCommand ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
+                        )
                 }
                 .buttonStyle(.plain)
-                .help("Copy command to clipboard: \(currentBrewCommand)")
+                .help(hasCopiedCommand ? "Copied!" : "Copy command: \(currentBrewCommand)")
 
                 Button {
                     refreshGeneration += 1
@@ -137,20 +132,7 @@ struct InstalledView: View {
                 packagesTable
             }
 
-            if let installation = homebrew.installation {
-                NotePanel(
-                    symbol: "checkmark.shield",
-                    title: "Homebrew active",
-                    message: "\(installation.version) · Prefix: \(installation.prefix) · Executable: \(installation.executablePath)",
-                    tint: AppTheme.success
-                )
-            } else {
-                NotePanel(
-                    symbol: "info.circle",
-                    title: "Formulae and casks are different",
-                    message: "Formulae install command-line tools and libraries; casks commonly install apps. BrewDesk does not treat every cask as a GUI app or a service."
-                )
-            }
+
         }
         .task(id: refreshGeneration) {
             if selectedFilter == .services {
@@ -275,8 +257,9 @@ struct InstalledView: View {
             HStack {
                 Text("SERVICE")
                 Spacer(minLength: 12)
-                Text("STATUS").frame(width: 100, alignment: .leading)
-                Text("ACTION").frame(width: 90, alignment: .trailing)
+                Text("STATUS").frame(width: 90, alignment: .leading)
+                Text("COMMAND").frame(width: 80, alignment: .center)
+                Text("ACTION").frame(width: 85, alignment: .trailing)
             }
             .font(.system(size: 9, weight: .bold))
             .tracking(0.7)
@@ -341,7 +324,35 @@ struct InstalledView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5)
                             .background(AppTheme.subtleFill, in: Capsule())
-                            .frame(width: 100, alignment: .leading)
+                            .frame(width: 90, alignment: .leading)
+
+                            let serviceCommand = service.status.isRunning
+                                ? "brew services stop \(service.name)"
+                                : "brew services start \(service.name)"
+
+                            Button {
+                                if ClipboardService.copy(serviceCommand) {
+                                    copiedServiceID = service.id
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                        if copiedServiceID == service.id {
+                                            copiedServiceID = nil
+                                        }
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: copiedServiceID == service.id ? "checkmark" : "doc.on.doc")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(copiedServiceID == service.id ? AppTheme.success : AppTheme.accent)
+                                    .frame(width: 26, height: 26)
+                                    .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .strokeBorder(copiedServiceID == service.id ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .help(copiedServiceID == service.id ? "Copied!" : "Copy command: \(serviceCommand)")
+                            .frame(width: 80, alignment: .center)
 
                             HStack {
                                 if homebrew.mutatingService == service.name {
@@ -367,7 +378,7 @@ struct InstalledView: View {
                                     .controlSize(.small)
                                 }
                             }
-                            .frame(width: 90, alignment: .trailing)
+                            .frame(width: 85, alignment: .trailing)
                         }
                         .padding(.horizontal, 18)
                         .padding(.vertical, 12)

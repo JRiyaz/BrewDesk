@@ -21,6 +21,11 @@ final class HomebrewStore: ObservableObject {
     @Published private(set) var packagesError: String?
     @Published private(set) var servicesError: String?
     @Published private(set) var updatesError: String?
+    @Published private(set) var searchError: String?
+
+    @Published private(set) var searchResults: [HomebrewSearchResult] = []
+    @Published private(set) var isSearching = false
+    @Published private(set) var installingPackage: String?
 
     @Published private(set) var installationCheckedAt: Date?
     @Published private(set) var packagesLoadedAt: Date?
@@ -231,6 +236,56 @@ final class HomebrewStore: ObservableObject {
         } catch is CancellationError {
         } catch {
             updatesError = error.localizedDescription
+        }
+    }
+
+    func searchCatalogue(query: String, kind: HomebrewPackageKind, customPath: String? = nil) async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            searchResults = []
+            isSearching = false
+            searchError = nil
+            return
+        }
+
+        isSearching = true
+        searchError = nil
+        defer { isSearching = false }
+
+        do {
+            let install = try await ensureInstallation(customPath: customPath)
+            let results = try await client.searchCatalogue(query: trimmed, kind: kind, using: install)
+            try Task.checkCancellation()
+            searchResults = results
+            searchError = nil
+        } catch is CancellationError {
+        } catch {
+            searchError = error.localizedDescription
+            searchResults = []
+        }
+    }
+
+    func installPackage(name: String, kind: HomebrewPackageKind, customPath: String? = nil) async {
+        guard installingPackage == nil else { return }
+        installingPackage = name
+        searchError = nil
+        defer { installingPackage = nil }
+
+        do {
+            let install = try await ensureInstallation(customPath: customPath)
+            try await client.installPackage(name: name, kind: kind, using: install)
+            if let refreshed = try? await client.listInstalledPackages(using: install) {
+                packages = refreshed
+            }
+            searchResults = searchResults.map { item in
+                if item.name == name && item.kind == kind {
+                    return HomebrewSearchResult(name: item.name, kind: item.kind, isInstalled: true, isDisabled: item.isDisabled)
+                }
+                return item
+            }
+        } catch is CancellationError {
+        } catch {
+            searchError = error.localizedDescription
         }
     }
 }

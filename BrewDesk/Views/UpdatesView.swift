@@ -99,10 +99,10 @@ struct UpdatesView: View {
                 HStack {
                     Text("PACKAGE")
                     Spacer(minLength: 12)
-                    Text("TYPE").frame(width: 75, alignment: .leading)
-                    Text("CURRENT").frame(width: 95, alignment: .leading)
-                    Text("LATEST").frame(width: 95, alignment: .leading)
-                    Text("COMMAND").frame(width: 200, alignment: .leading)
+                    Text("TYPE").frame(width: 80, alignment: .leading)
+                    Text("CURRENT").frame(width: 110, alignment: .leading)
+                    Text("LATEST").frame(width: 110, alignment: .leading)
+                    Text("COMMAND").frame(width: 80, alignment: .center)
                     Text("ACTION").frame(width: 85, alignment: .trailing)
                 }
                 .font(.system(size: 9, weight: .bold))
@@ -154,14 +154,14 @@ struct UpdatesView: View {
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 5)
                                     .background(AppTheme.subtleFill, in: Capsule())
-                                    .frame(width: 75, alignment: .leading)
+                                    .frame(width: 80, alignment: .leading)
 
                                 Text(package.installedVersion)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                    .frame(width: 95, alignment: .leading)
+                                    .frame(width: 110, alignment: .leading)
 
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.right")
@@ -173,7 +173,7 @@ struct UpdatesView: View {
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                 }
-                                .frame(width: 95, alignment: .leading)
+                                .frame(width: 110, alignment: .leading)
 
                                 Button {
                                     if ClipboardService.copy(package.upgradeCommand) {
@@ -185,27 +185,19 @@ struct UpdatesView: View {
                                         }
                                     }
                                 } label: {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: copiedPackageID == package.id ? "checkmark" : "doc.on.doc")
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(copiedPackageID == package.id ? AppTheme.success : AppTheme.accent)
-                                        Text(copiedPackageID == package.id ? "Copied" : package.upgradeCommand)
-                                            .font(.system(size: 10, design: .monospaced))
-                                            .foregroundStyle(copiedPackageID == package.id ? AppTheme.success : .primary)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                            .strokeBorder(copiedPackageID == package.id ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
-                                    )
+                                    Image(systemName: copiedPackageID == package.id ? "checkmark" : "doc.on.doc")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(copiedPackageID == package.id ? AppTheme.success : AppTheme.accent)
+                                        .frame(width: 26, height: 26)
+                                        .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                                .strokeBorder(copiedPackageID == package.id ? AppTheme.success.opacity(0.4) : AppTheme.separator, lineWidth: 0.8)
+                                        )
                                 }
                                 .buttonStyle(.plain)
-                                .help("Copy update command: \(package.upgradeCommand)")
-                                .frame(width: 200, alignment: .leading)
+                                .help(copiedPackageID == package.id ? "Copied!" : "Copy update command: \(package.upgradeCommand)")
+                                .frame(width: 80, alignment: .center)
 
                                 HStack {
                                     if homebrew.updatingPackage == package.name {

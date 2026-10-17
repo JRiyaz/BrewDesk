@@ -21,7 +21,6 @@ struct ContentView: View {
 
                 ScrollView {
                     pageContent
-                        .frame(maxWidth: 1020, alignment: .leading)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.horizontal, 30)
                         .padding(.vertical, 28)
@@ -44,7 +43,7 @@ struct ContentView: View {
         case .installed:
             InstalledView(searchText: searchText, homebrew: homebrew)
         case .discover:
-            DiscoverView(searchText: searchText)
+            DiscoverView(searchText: searchText, homebrew: homebrew)
         case .updates:
             UpdatesView(homebrew: homebrew)
         case .cleaner:

@@ -332,6 +332,80 @@ struct HomebrewClient {
         )
     }
 
+    func searchCatalogue(
+        query: String,
+        kind: HomebrewPackageKind,
+        using installation: HomebrewInstallation
+    ) async throws -> [HomebrewSearchResult] {
+        let executableURL = URL(fileURLWithPath: installation.executablePath)
+        let kindFlag = kind == .cask ? "--cask" : "--formula"
+        let output = try await checkedOutput(
+            executableURL: executableURL,
+            arguments: ["search", kindFlag, query],
+            displayCommand: "brew search \(kindFlag) \(query)"
+        )
+        return parseSearchResults(output, kind: kind)
+    }
+
+    func installPackage(
+        name: String,
+        kind: HomebrewPackageKind,
+        using installation: HomebrewInstallation
+    ) async throws {
+        let executableURL = URL(fileURLWithPath: installation.executablePath)
+        let args = kind == .cask ? ["install", "--cask", name] : ["install", name]
+        _ = try await ProcessRunner.run(
+            executableURL: executableURL,
+            arguments: args,
+            timeout: 300
+        )
+    }
+
+    private func parseSearchResults(_ output: String, kind: HomebrewPackageKind) -> [HomebrewSearchResult] {
+        let lines = output.split(whereSeparator: \.isNewline)
+        var results: [HomebrewSearchResult] = []
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty, !trimmed.hasPrefix("==>") else { continue }
+
+            let rawTokens = trimmed.split(whereSeparator: \.isWhitespace).map(String.init)
+            var i = 0
+            while i < rawTokens.count {
+                let token = rawTokens[i]
+                if token == "✔" || token == "(disabled)" {
+                    i += 1
+                    continue
+                }
+                var isInstalled = false
+                var isDisabled = false
+
+                if i + 1 < rawTokens.count && rawTokens[i + 1] == "✔" {
+                    isInstalled = true
+                }
+                if i + 1 < rawTokens.count && rawTokens[i + 1] == "(disabled)" {
+                    isDisabled = true
+                }
+                if i + 2 < rawTokens.count && rawTokens[i + 2] == "(disabled)" {
+                    isDisabled = true
+                }
+
+                let cleanName = token.replacingOccurrences(of: "✔", with: "").trimmingCharacters(in: .whitespaces)
+                if !cleanName.isEmpty {
+                    results.append(HomebrewSearchResult(
+                        name: cleanName,
+                        kind: kind,
+                        isInstalled: isInstalled,
+                        isDisabled: isDisabled
+                    ))
+                }
+                i += 1
+            }
+        }
+
+        return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
     private func inspectExecutable(at path: String) async throws -> HomebrewInstallation {
         let executableURL = URL(fileURLWithPath: path)
         let version = try await checkedOutput(

@@ -79,6 +79,19 @@ struct HomebrewOutdatedPackage: Identifiable, Hashable, Sendable {
     }
 }
 
+struct HomebrewSearchResult: Identifiable, Hashable, Sendable {
+    let name: String
+    let kind: HomebrewPackageKind
+    let isInstalled: Bool
+    let isDisabled: Bool
+
+    var id: String { "\(kind.rawValue):\(name)" }
+
+    var installCommand: String {
+        kind == .cask ? "brew install --cask \(name)" : "brew install \(name)"
+    }
+}
+
 struct HomebrewInstallation: Equatable {
     let executablePath: String
     let version: String
