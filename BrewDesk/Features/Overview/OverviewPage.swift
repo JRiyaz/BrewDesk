@@ -68,25 +68,15 @@ struct OverviewPage: View {
                 .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
             }
 
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.shield")
-                    .foregroundStyle(AppTheme.success)
-                Text("Local-first by design")
-                    .fontWeight(.semibold)
-                Text("•  No background agent or scheduled jobs")
-            }
-            .font(.system(size: 10))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 2)
         }
     }
 
     private var welcomeCard: some View {
         HStack(alignment: .center, spacing: 22) {
             VStack(alignment: .leading, spacing: 12) {
-                StatusPill(title: "DESIGN PREVIEW", symbol: "sparkles", tint: AppTheme.accent)
+                StatusPill(title: "HOMEBREW UTILITIES", symbol: "checkmark.circle", tint: AppTheme.accent)
 
-                Text("Your Mac,\nneatly managed.")
+                Text("Manage your apps.")
                     .font(.system(size: 29, weight: .bold, design: .rounded))
                     .tracking(-0.8)
                     .foregroundStyle(.primary)
@@ -123,11 +113,11 @@ struct OverviewPage: View {
                 Circle()
                     .strokeBorder(AppTheme.accent.opacity(0.12), lineWidth: 1)
                     .frame(width: 136, height: 136)
-                Image(systemName: "shippingbox.and.arrow.backward.fill")
-                    .font(.system(size: 62, weight: .light))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(AppTheme.accent)
-                    .rotationEffect(.degrees(-6))
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 150, height: 150)
             }
             .frame(width: 190, height: 190)
             .accessibilityHidden(true)

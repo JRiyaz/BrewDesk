@@ -6,19 +6,11 @@ struct AppSidebar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [AppTheme.accent.opacity(0.95), AppTheme.accent.opacity(0.68)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                    Image(systemName: "shippingbox.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 40, height: 40)
-                .shadow(color: AppTheme.accent.opacity(0.18), radius: 9, y: 4)
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("BrewDesk")
@@ -56,21 +48,6 @@ struct AppSidebar: View {
                 Divider().overlay(AppTheme.separator)
                 SidebarItem(section: .settings, isSelected: selection == .settings) {
                     selection = .settings
-                }
-
-                HStack(alignment: .top, spacing: 9) {
-                    Image(systemName: "moon.zzz")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 18)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Quiet by default")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        Text("No background agent")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
-                    }
                 }
                 .padding(.horizontal, 10)
             }
