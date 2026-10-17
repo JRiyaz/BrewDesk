@@ -5,7 +5,7 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var installedFilter: InstalledFilter = .all
     @StateObject private var homebrew = HomebrewStore()
-
+    
     var body: some View {
         NavigationSplitView {
             AppSidebar(selection: $selection)
@@ -16,10 +16,10 @@ struct ContentView: View {
                     searchText: $searchText,
                     onOpenSettings: { selection = .settings }
                 )
-
+                
                 Divider()
                     .overlay(AppTheme.separator)
-
+                
                 ScrollView {
                     pageContent
                         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -49,7 +49,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     @ViewBuilder
     private var pageContent: some View {
         switch selection {
@@ -73,7 +73,7 @@ struct ContentView: View {
             SettingsView(homebrew: homebrew)
         }
     }
-
+    
     private func navigate(to section: AppSection) {
         searchText = ""
         selection = section

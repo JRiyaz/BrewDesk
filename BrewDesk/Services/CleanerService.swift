@@ -18,7 +18,7 @@ final class CleanerService: ObservableObject {
     @Published private(set) var autoremoveItems: [CleanableItem] = []
     @Published private(set) var cleanupItems: [CleanableItem] = []
     @Published private(set) var cachedBottleItems: [CleanableItem] = []
-
+    
     @Published private(set) var cacheSizeBytes: Int64 = 0
     @Published private(set) var isScanning = false
     @Published private(set) var isCleaning = false
@@ -28,32 +28,32 @@ final class CleanerService: ObservableObject {
     @Published private(set) var lastAutoremoveAt: Date?
     @Published private(set) var lastCleanedAt: Date?
     @Published private(set) var lastPrunedAt: Date?
-
+    
     var cacheFormattedSize: String {
         ByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .file)
     }
-
+    
     // Backward-compatible alias
     var items: [CleanableItem] {
         cleanupItems
     }
-
+    
     func scanAll(using installation: HomebrewInstallation?) async {
         guard !isScanning else { return }
         isScanning = true
         cleanerError = nil
         defer { isScanning = false }
-
+        
         // 1. Scan the cache folder directly
         scanCacheDirectory(using: installation)
-
+        
         guard let installation else {
             lastScannedAt = Date()
             return
         }
-
+        
         let executableURL = URL(fileURLWithPath: installation.executablePath)
-
+        
         // 2. Scan autoremove dry run
         do {
             let autoResult = try await ProcessRunner.run(
@@ -67,7 +67,7 @@ final class CleanerService: ObservableObject {
         } catch {
             // Autoremove dry-run warning is benign if no orphaned formulae
         }
-
+        
         // 3. Scan cleanup dry run
         do {
             let cleanResult = try await ProcessRunner.run(
@@ -81,14 +81,14 @@ final class CleanerService: ObservableObject {
         } catch {
             // Non-fatal if sandbox limits certain directories
         }
-
+        
         self.lastScannedAt = Date()
     }
-
+    
     func scan(using installation: HomebrewInstallation?) async {
         await scanAll(using: installation)
     }
-
+    
     func runAutoremove(using installation: HomebrewInstallation?) async -> Bool {
         guard let installation, !isCleaning else { return false }
         isCleaning = true
@@ -98,7 +98,7 @@ final class CleanerService: ObservableObject {
             isCleaning = false
             activeAction = nil
         }
-
+        
         let executableURL = URL(fileURLWithPath: installation.executablePath)
         do {
             _ = try await ProcessRunner.run(
@@ -116,7 +116,7 @@ final class CleanerService: ObservableObject {
             return false
         }
     }
-
+    
     func runCleanup(using installation: HomebrewInstallation?) async -> Bool {
         guard let installation, !isCleaning else { return false }
         isCleaning = true
@@ -126,7 +126,7 @@ final class CleanerService: ObservableObject {
             isCleaning = false
             activeAction = nil
         }
-
+        
         let executableURL = URL(fileURLWithPath: installation.executablePath)
         do {
             _ = try await ProcessRunner.run(
@@ -144,7 +144,7 @@ final class CleanerService: ObservableObject {
             return false
         }
     }
-
+    
     func pruneAllCache(using installation: HomebrewInstallation?) async -> Bool {
         guard let installation, !isCleaning else { return false }
         isCleaning = true
@@ -154,7 +154,7 @@ final class CleanerService: ObservableObject {
             isCleaning = false
             activeAction = nil
         }
-
+        
         let executableURL = URL(fileURLWithPath: installation.executablePath)
         do {
             _ = try await ProcessRunner.run(
@@ -172,7 +172,7 @@ final class CleanerService: ObservableObject {
             return false
         }
     }
-
+    
     func deleteItem(_ item: CleanableItem) {
         do {
             try FileManager.default.removeItem(atPath: item.path)
@@ -183,21 +183,21 @@ final class CleanerService: ObservableObject {
             cleanerError = "Failed to remove \(item.name): \(error.localizedDescription)"
         }
     }
-
+    
     private func scanCacheDirectory(using installation: HomebrewInstallation?) {
         let cachePath = ("~/Library/Caches/Homebrew" as NSString).expandingTildeInPath
         let fileManager = FileManager.default
         let url = URL(fileURLWithPath: cachePath)
-
+        
         guard fileManager.fileExists(atPath: cachePath) else {
             cacheSizeBytes = 0
             cachedBottleItems = []
             return
         }
-
+        
         var totalSize: Int64 = 0
         var foundBottles: [CleanableItem] = []
-
+        
         if let enumerator = fileManager.enumerator(
             at: url,
             includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey, .isDirectoryKey],
@@ -209,9 +209,9 @@ final class CleanerService: ObservableObject {
                       let size = values.fileSize else {
                     continue
                 }
-
+                
                 totalSize += Int64(size)
-
+                
                 let filename = fileURL.lastPathComponent
                 let category: String
                 if filename.contains(".bottle.") || filename.hasSuffix(".tar.gz") {
@@ -225,7 +225,7 @@ final class CleanerService: ObservableObject {
                 } else {
                     category = "Cached File"
                 }
-
+                
                 let sizeString = ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
                 foundBottles.append(CleanableItem(
                     id: fileURL.path,
@@ -236,7 +236,7 @@ final class CleanerService: ObservableObject {
                 ))
             }
         }
-
+        
         self.cacheSizeBytes = totalSize
         // Sort largest files first, capped to top 150 items for snappy UI performance
         self.cachedBottleItems = Array(
@@ -244,7 +244,7 @@ final class CleanerService: ObservableObject {
                 .prefix(150)
         )
     }
-
+    
     private func parseAutoremoveDryRun(_ output: String) -> [CleanableItem] {
         var results: [CleanableItem] = []
         let lines = output.split(whereSeparator: \.isNewline)
@@ -274,11 +274,11 @@ final class CleanerService: ObservableObject {
         }
         return results
     }
-
+    
     private func parseCleanupDryRun(_ output: String) -> [CleanableItem] {
         var results: [CleanableItem] = []
         let lines = output.split(whereSeparator: \.isNewline)
-
+        
         for line in lines {
             let str = String(line).trimmingCharacters(in: .whitespaces)
             guard str.hasPrefix("Would remove:") else { continue }
@@ -286,7 +286,7 @@ final class CleanerService: ObservableObject {
             let parts = afterPrefix.components(separatedBy: " (")
             guard let path = parts.first?.trimmingCharacters(in: .whitespaces) else { continue }
             let size = parts.count > 1 ? parts[1].replacingOccurrences(of: ")", with: "").trimmingCharacters(in: .whitespaces) : "Unknown"
-
+            
             let name = URL(fileURLWithPath: path).lastPathComponent
             let category: String
             if path.contains("Caches") {
@@ -296,7 +296,7 @@ final class CleanerService: ObservableObject {
             } else {
                 category = "Old Package Version"
             }
-
+            
             results.append(CleanableItem(
                 id: path,
                 path: path,
@@ -305,7 +305,7 @@ final class CleanerService: ObservableObject {
                 category: category
             ))
         }
-
+        
         return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }

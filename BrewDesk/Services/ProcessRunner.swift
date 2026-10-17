@@ -9,7 +9,7 @@ struct ProcessResult: Sendable {
 enum ProcessRunnerError: LocalizedError {
     case launchFailed(String)
     case timedOut(TimeInterval)
-
+    
     var errorDescription: String? {
         switch self {
         case .launchFailed(let reason):
@@ -30,7 +30,7 @@ enum ProcessRunner {
         timeout: TimeInterval = 20
     ) async throws -> ProcessResult {
         try Task.checkCancellation()
-
+        
         let process = Process()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -39,14 +39,14 @@ enum ProcessRunner {
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
         process.environment = commandEnvironment()
-
+        
         let timeoutMarker = TimeoutMarker()
         let timeoutWorkItem = DispatchWorkItem {
             guard process.isRunning else { return }
             timeoutMarker.markTimedOut()
             process.terminate()
         }
-
+        
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
             do {
@@ -54,12 +54,12 @@ enum ProcessRunner {
             } catch {
                 throw ProcessRunnerError.launchFailed(error.localizedDescription)
             }
-
+            
             DispatchQueue.global(qos: .utility).asyncAfter(
                 deadline: .now() + timeout,
                 execute: timeoutWorkItem
             )
-
+            
             let stdoutHandle = stdoutPipe.fileHandleForReading
             let stderrHandle = stderrPipe.fileHandleForReading
             let stdoutTask = Task.detached(priority: .utility) {
@@ -72,16 +72,16 @@ enum ProcessRunner {
                 process.waitUntilExit()
                 return process.terminationStatus
             }.value
-
+            
             timeoutWorkItem.cancel()
             let stdoutData = await stdoutTask.value
             let stderrData = await stderrTask.value
-
+            
             try Task.checkCancellation()
             if timeoutMarker.didTimeOut {
                 throw ProcessRunnerError.timedOut(timeout)
             }
-
+            
             return ProcessResult(
                 standardOutput: String(decoding: stdoutData, as: UTF8.self),
                 standardError: String(decoding: stderrData, as: UTF8.self),
@@ -93,7 +93,7 @@ enum ProcessRunner {
             }
         }
     }
-
+    
     private static func commandEnvironment() -> [String: String] {
         var environment = ProcessInfo.processInfo.environment
         environment["HOMEBREW_NO_ANALYTICS"] = "1"
@@ -112,13 +112,13 @@ enum ProcessRunner {
 private final class TimeoutMarker: @unchecked Sendable {
     private let lock = NSLock()
     private var timedOut = false
-
+    
     func markTimedOut() {
         lock.lock()
         timedOut = true
         lock.unlock()
     }
-
+    
     var didTimeOut: Bool {
         lock.lock()
         defer { lock.unlock() }

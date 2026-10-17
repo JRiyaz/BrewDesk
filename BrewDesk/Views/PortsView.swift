@@ -7,11 +7,11 @@ struct PortsView: View {
     @State private var copiedID: String?
     @State private var hasCopiedLsofCommand = false
     @State private var processToTerminate: ListeningPort?
-
+    
     private var currentLsofCommand: String {
         "/usr/sbin/lsof -iTCP -sTCP:LISTEN -n -P"
     }
-
+    
     private var filteredPorts: [ListeningPort] {
         scanner.ports.filter { item in
             let matchesFilter: Bool
@@ -20,22 +20,22 @@ struct PortsView: View {
             case .custom: matchesFilter = item.isCustom
             case .system: matchesFilter = !item.isCustom
             }
-
+            
             let matchesSearch: Bool
             if searchText.isEmpty {
                 matchesSearch = true
             } else {
                 let term = searchText.lowercased()
                 matchesSearch = "\(item.port)".contains(term) ||
-                    item.processName.lowercased().contains(term) ||
-                    item.friendlyDescription.lowercased().contains(term) ||
-                    "\(item.pid)".contains(term)
+                item.processName.lowercased().contains(term) ||
+                item.friendlyDescription.lowercased().contains(term) ||
+                "\(item.pid)".contains(term)
             }
-
+            
             return matchesFilter && matchesSearch
         }
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -43,7 +43,7 @@ struct PortsView: View {
                 title: "Know what is using your ports",
                 description: "Inspect active listening TCP ports on your Mac. Differentiate your custom apps (Angular, Flask, Vite, Node, etc.) from macOS system daemons."
             )
-
+            
             HStack(spacing: 12) {
                 MetricCard(
                     title: "Total listening",
@@ -65,7 +65,7 @@ struct PortsView: View {
                     tint: .secondary
                 )
             }
-
+            
             HStack(spacing: 12) {
                 Picker("Port filter", selection: $selectedFilter) {
                     ForEach(PortFilter.allCases) { filter in
@@ -74,13 +74,13 @@ struct PortsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 380)
-
+                
                 Spacer()
-
+                
                 if scanner.isScanning {
                     ProgressView().controlSize(.small)
                 }
-
+                
                 Button {
                     if ClipboardService.copy(currentLsofCommand) {
                         hasCopiedLsofCommand = true
@@ -101,7 +101,7 @@ struct PortsView: View {
                 }
                 .buttonStyle(.plain)
                 .help(Text(verbatim: hasCopiedLsofCommand ? "Copied!" : "Copy command: \(currentLsofCommand)"))
-
+                
                 Button {
                     Task { await scanner.scanPorts() }
                 } label: {
@@ -111,7 +111,7 @@ struct PortsView: View {
                 .disabled(scanner.isScanning)
                 .help(Text(verbatim: "Refresh list of active listening ports"))
             }
-
+            
             if let error = scanner.scanError {
                 NotePanel(
                     symbol: "exclamationmark.triangle",
@@ -120,7 +120,7 @@ struct PortsView: View {
                     tint: AppTheme.warning
                 )
             }
-
+            
             VStack(spacing: 0) {
                 HStack {
                     Text("PORT / ADDRESS").frame(width: 140, alignment: .leading)
@@ -136,9 +136,9 @@ struct PortsView: View {
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 13)
-
+                
                 Divider().overlay(AppTheme.separator)
-
+                
                 if scanner.isScanning && scanner.ports.isEmpty {
                     EmptyStateView(
                         symbol: "hourglass",
@@ -150,8 +150,8 @@ struct PortsView: View {
                         symbol: searchText.isEmpty ? "point.3.connected.trianglepath.dotted" : "magnifyingglass",
                         title: searchText.isEmpty ? "No active ports found" : "No matching ports",
                         message: searchText.isEmpty
-                            ? "No listening ports found matching '\(selectedFilter.rawValue)'."
-                            : "No open ports match “\(searchText)”."
+                        ? "No listening ports found matching '\(selectedFilter.rawValue)'."
+                        : "No open ports match “\(searchText)”."
                     )
                 } else {
                     LazyVStack(spacing: 0) {
@@ -167,7 +167,7 @@ struct PortsView: View {
                                         .lineLimit(1)
                                 }
                                 .frame(width: 140, alignment: .leading)
-
+                                
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(item.processName)
                                         .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -178,9 +178,9 @@ struct PortsView: View {
                                         .foregroundStyle(.tertiary)
                                         .lineLimit(1)
                                 }
-
+                                
                                 Spacer(minLength: 8)
-
+                                
                                 Text(item.typeTitle)
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundStyle(item.isCustom ? AppTheme.accent : .secondary)
@@ -188,12 +188,12 @@ struct PortsView: View {
                                     .padding(.vertical, 4)
                                     .background(item.isCustom ? AppTheme.accent.opacity(0.1) : AppTheme.subtleFill, in: Capsule())
                                     .frame(width: 110, alignment: .leading)
-
+                                
                                 Text("\(item.pid)")
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .frame(width: 65, alignment: .leading)
-
+                                
                                 Button {
                                     if ClipboardService.copy(item.killCommand) {
                                         copiedID = item.id
@@ -217,7 +217,7 @@ struct PortsView: View {
                                 .buttonStyle(.plain)
                                 .help(Text(verbatim: copiedID == item.id ? "Copied!" : "Copy terminate command: \(item.killCommand)"))
                                 .frame(width: 80, alignment: .center)
-
+                                
                                 HStack {
                                     if scanner.terminatingPID == item.pid {
                                         ProgressView().controlSize(.small)
@@ -246,7 +246,7 @@ struct PortsView: View {
                             }
                             .padding(.horizontal, 18)
                             .padding(.vertical, 12)
-
+                            
                             if item.id != filteredPorts.last?.id {
                                 Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                             }

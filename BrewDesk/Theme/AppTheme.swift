@@ -5,9 +5,9 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     case system = "System"
     case light = "Light"
     case dark = "Dark"
-
+    
     var id: String { rawValue }
-
+    
     var colorScheme: ColorScheme? {
         switch self {
         case .system: return nil
@@ -15,7 +15,7 @@ enum AppAppearance: String, CaseIterable, Identifiable {
         case .dark: return .dark
         }
     }
-
+    
     var symbolName: String {
         switch self {
         case .system: return "circle.lefthalf.filled"
@@ -35,7 +35,7 @@ enum AppTheme {
     static let success = Color.green
     static let warning = Color.orange
     static let danger = Color.red
-
+    
     static let cardShape = RoundedRectangle(cornerRadius: 18, style: .continuous)
     static let compactShape = RoundedRectangle(cornerRadius: 12, style: .continuous)
 }

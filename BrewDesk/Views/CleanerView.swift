@@ -4,10 +4,10 @@ enum CleanerSection: String, CaseIterable, Identifiable {
     case autoremove = "Autoremove"
     case clean = "Clean"
     case purgeCache = "Purge cache"
-
+    
     var id: String { rawValue }
     var title: String { rawValue }
-
+    
     var symbol: String {
         switch self {
         case .autoremove: return "xmark.bin"
@@ -15,7 +15,7 @@ enum CleanerSection: String, CaseIterable, Identifiable {
         case .purgeCache: return "flame"
         }
     }
-
+    
     var subtitle: String {
         switch self {
         case .autoremove: return "Orphaned dependencies"
@@ -23,7 +23,7 @@ enum CleanerSection: String, CaseIterable, Identifiable {
         case .purgeCache: return "Wipe active bottle cache"
         }
     }
-
+    
     var command: String {
         switch self {
         case .autoremove: return "brew autoremove"
@@ -37,11 +37,11 @@ struct CleanerView: View {
     @ObservedObject var homebrew: HomebrewStore
     @StateObject private var cleaner = CleanerService()
     @State private var selectedSection: CleanerSection = .clean
-
+    
     @State private var copiedItemID: String?
     @State private var hasCopiedSectionCommand = false
     @State private var showConfirmDialog = false
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -49,7 +49,7 @@ struct CleanerView: View {
                 title: "Cleaner",
                 description: "Keep your Homebrew installation optimized by removing unused dependencies, outdated package versions, and cached bottle archives."
             )
-
+            
             // Main Master-Detail Layout
             HStack(alignment: .top, spacing: 20) {
                 // Left Navigation: 3 Cleaner Sections
@@ -64,9 +64,9 @@ struct CleanerView: View {
                             selectedSection = section
                         }
                     }
-
+                    
                     Spacer(minLength: 16)
-
+                    
                     // Persistent Cache Footprint summary card
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
@@ -78,11 +78,11 @@ struct CleanerView: View {
                                 .tracking(0.6)
                                 .foregroundStyle(.tertiary)
                         }
-
+                        
                         Text(cleaner.lastScannedAt != nil ? cleaner.cacheFormattedSize : "Scanning…")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
-
+                        
                         Text("Stored in ~/Library/Caches/Homebrew")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
@@ -97,15 +97,15 @@ struct CleanerView: View {
                     )
                 }
                 .frame(width: 260)
-
+                
                 // Right Panel: Selected Section Detail
                 VStack(alignment: .leading, spacing: 18) {
                     rightSectionHeader
-
+                    
                     rightSectionMetrics
-
+                    
                     rightSectionActionBar
-
+                    
                     if let error = cleaner.cleanerError {
                         NotePanel(
                             symbol: "exclamationmark.triangle",
@@ -114,7 +114,7 @@ struct CleanerView: View {
                             tint: AppTheme.warning
                         )
                     }
-
+                    
                     rightSectionContentTable
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -132,9 +132,9 @@ struct CleanerView: View {
             Text(confirmMessage)
         }
     }
-
+    
     // MARK: - Right Panel Components
-
+    
     private var rightSectionHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
@@ -145,14 +145,14 @@ struct CleanerView: View {
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
             }
-
+            
             Text(sectionDescription)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
-
+    
     private var rightSectionMetrics: some View {
         HStack(spacing: 12) {
             switch selectedSection {
@@ -178,7 +178,7 @@ struct CleanerView: View {
                     symbol: "terminal",
                     tint: AppTheme.accent
                 )
-
+                
             case .clean:
                 MetricCard(
                     title: "Cleanable files",
@@ -201,7 +201,7 @@ struct CleanerView: View {
                     symbol: "terminal",
                     tint: AppTheme.accent
                 )
-
+                
             case .purgeCache:
                 MetricCard(
                     title: "Total bottle cache",
@@ -227,7 +227,7 @@ struct CleanerView: View {
             }
         }
     }
-
+    
     private var rightSectionActionBar: some View {
         HStack(spacing: 10) {
             if cleaner.isCleaning || cleaner.isScanning {
@@ -236,9 +236,9 @@ struct CleanerView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
-
+            
             Spacer()
-
+            
             // Refresh / Scan Button
             Button {
                 Task {
@@ -250,7 +250,7 @@ struct CleanerView: View {
             .buttonStyle(.bordered)
             .disabled(cleaner.isScanning || cleaner.isCleaning)
             .help(Text(verbatim: "Scan for cleanable items"))
-
+            
             // Action Button + Copy Command Combo
             HStack(spacing: 0) {
                 if selectedSection == .purgeCache {
@@ -271,7 +271,7 @@ struct CleanerView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(cleaner.isCleaning || cleaner.isScanning || isActionButtonDisabled)
                 }
-
+                
                 Button {
                     if ClipboardService.copy(selectedSection.command) {
                         hasCopiedSectionCommand = true
@@ -292,12 +292,12 @@ struct CleanerView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(
                 selectedSection == .purgeCache
-                    ? RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AppTheme.warning.opacity(0.3), lineWidth: 0.8)
-                    : nil
+                ? RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AppTheme.warning.opacity(0.3), lineWidth: 0.8)
+                : nil
             )
         }
     }
-
+    
     private var rightSectionContentTable: some View {
         VStack(spacing: 0) {
             // Table Header
@@ -313,9 +313,9 @@ struct CleanerView: View {
             .foregroundStyle(.tertiary)
             .padding(.horizontal, 18)
             .padding(.vertical, 13)
-
+            
             Divider().overlay(AppTheme.separator)
-
+            
             // Table Content
             switch selectedSection {
             case .autoremove:
@@ -334,7 +334,7 @@ struct CleanerView: View {
                 } else {
                     itemList(cleaner.autoremoveItems)
                 }
-
+                
             case .clean:
                 if cleaner.isScanning && cleaner.cleanupItems.isEmpty {
                     EmptyStateView(
@@ -347,13 +347,13 @@ struct CleanerView: View {
                         symbol: "checkmark.seal",
                         title: "Homebrew downloads are clean",
                         message: cleaner.cacheSizeBytes > 0
-                            ? "No outdated package versions or stale lockfiles found. Active bottle archives (\(cleaner.cacheFormattedSize)) are kept for your installed software so reinstallations are instant. Select 'Purge cache' if you wish to clear all archived downloads."
-                            : "No stale lockfiles, outdated bottle downloads, or orphaned packages found."
+                        ? "No outdated package versions or stale lockfiles found. Active bottle archives (\(cleaner.cacheFormattedSize)) are kept for your installed software so reinstallations are instant. Select 'Purge cache' if you wish to clear all archived downloads."
+                        : "No stale lockfiles, outdated bottle downloads, or orphaned packages found."
                     )
                 } else {
                     itemList(cleaner.cleanupItems)
                 }
-
+                
             case .purgeCache:
                 if cleaner.isScanning && cleaner.cachedBottleItems.isEmpty {
                     EmptyStateView(
@@ -375,7 +375,7 @@ struct CleanerView: View {
         .background(AppTheme.panel, in: AppTheme.cardShape)
         .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
     }
-
+    
     private func itemList(_ items: [CleanableItem]) -> some View {
         LazyVStack(spacing: 0) {
             ForEach(items) { item in
@@ -391,9 +391,9 @@ struct CleanerView: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-
+                    
                     Spacer(minLength: 8)
-
+                    
                     Text(item.category)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
@@ -401,12 +401,12 @@ struct CleanerView: View {
                         .padding(.vertical, 4)
                         .background(AppTheme.subtleFill, in: Capsule())
                         .frame(width: 140, alignment: .leading)
-
+                    
                     Text(item.sizeString)
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(AppTheme.accent)
                         .frame(width: 90, alignment: .leading)
-
+                    
                     Button {
                         if ClipboardService.copy(item.removeCommand) {
                             copiedItemID = item.id
@@ -433,16 +433,16 @@ struct CleanerView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 12)
-
+                
                 if item.id != items.last?.id {
                     Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                 }
             }
         }
     }
-
+    
     // MARK: - Helper Computed Properties
-
+    
     private func badgeText(for section: CleanerSection) -> String {
         switch section {
         case .autoremove:
@@ -453,7 +453,7 @@ struct CleanerView: View {
             return cleaner.cacheSizeBytes > 0 ? cleaner.cacheFormattedSize : "0 B"
         }
     }
-
+    
     private var sectionDescription: String {
         switch selectedSection {
         case .autoremove:
@@ -464,7 +464,7 @@ struct CleanerView: View {
             return "Homebrew retains downloaded archives for your active packages in ~/Library/Caches/Homebrew so they don't need re-downloading if reinstalled. Purge completely clears this archive store to maximize free disk space."
         }
     }
-
+    
     private var tableFirstColumnHeader: String {
         switch selectedSection {
         case .autoremove: return "PACKAGE / DEPENDENCY"
@@ -472,7 +472,7 @@ struct CleanerView: View {
         case .purgeCache: return "CACHED ARCHIVE / FEED"
         }
     }
-
+    
     private var actionButtonTitle: String {
         switch selectedSection {
         case .autoremove: return "Run Autoremove"
@@ -480,7 +480,7 @@ struct CleanerView: View {
         case .purgeCache: return "Purge All Cache"
         }
     }
-
+    
     private var isActionButtonDisabled: Bool {
         switch selectedSection {
         case .autoremove:
@@ -491,7 +491,7 @@ struct CleanerView: View {
             return cleaner.cacheSizeBytes == 0
         }
     }
-
+    
     private var confirmTitle: String {
         switch selectedSection {
         case .autoremove: return "Run Homebrew Autoremove?"
@@ -499,7 +499,7 @@ struct CleanerView: View {
         case .purgeCache: return "Purge All Homebrew Cache?"
         }
     }
-
+    
     private var confirmActionLabel: String {
         switch selectedSection {
         case .autoremove: return "Autoremove Unneeded Packages"
@@ -507,7 +507,7 @@ struct CleanerView: View {
         case .purgeCache: return "Purge Entire Cache"
         }
     }
-
+    
     private var confirmMessage: String {
         switch selectedSection {
         case .autoremove:
@@ -518,7 +518,7 @@ struct CleanerView: View {
             return "BrewDesk will run `brew cleanup --prune=all` to delete all bottle downloads and cached archives in ~/Library/Caches/Homebrew (\(cleaner.cacheFormattedSize)). Homebrew will re-download files if needed in the future."
         }
     }
-
+    
     private func runSelectedAction() {
         Task {
             switch selectedSection {
@@ -541,7 +541,7 @@ private struct CleanerSectionCard: View {
     let badgeText: String
     let isWarning: Bool
     let action: () -> Void
-
+    
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
@@ -550,20 +550,20 @@ private struct CleanerSectionCard: View {
                     .foregroundStyle(isSelected ? AppTheme.accent : .secondary)
                     .frame(width: 30, height: 30)
                     .background(isSelected ? AppTheme.accent.opacity(0.12) : AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
+                
                 VStack(alignment: .leading, spacing: 2) {
                     Text(section.title)
                         .font(.system(size: 13, weight: isSelected ? .bold : .semibold, design: .rounded))
                         .foregroundStyle(isSelected ? .primary : .secondary)
-
+                    
                     Text(section.subtitle)
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
-
+                
                 Spacer(minLength: 4)
-
+                
                 Text(badgeText)
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .foregroundStyle(isSelected ? AppTheme.accent : (isWarning ? AppTheme.warning : .secondary))

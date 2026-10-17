@@ -11,9 +11,9 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
     case ports
     case systemCleaner
     case settings
-
+    
     var id: String { rawValue }
-
+    
     var title: String {
         switch self {
         case .overview: "Overview"
@@ -28,7 +28,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .settings: "Settings"
         }
     }
-
+    
     var symbol: String {
         switch self {
         case .overview: "square.grid.2x2"
@@ -43,7 +43,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .settings: "gearshape"
         }
     }
-
+    
     var subtitle: String {
         switch self {
         case .overview: "A clear view of your Mac tools."
@@ -58,14 +58,14 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .settings: "Make BrewDesk feel right for you."
         }
     }
-
+    
     var supportsSearch: Bool {
         switch self {
         case .installed, .services, .discover, .ports, .commands, .systemCleaner: true
         default: false
         }
     }
-
+    
     static let homebrew: [AppSection] = [.overview, .installed, .services, .discover, .updates, .cleaner, .commands]
     static let utilities: [AppSection] = [.ports, .systemCleaner]
     static var workspace: [AppSection] { homebrew }

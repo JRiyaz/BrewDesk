@@ -6,15 +6,15 @@ struct SystemCleanerView: View {
     @State private var selectedFilter: FilterType = .all
     @State private var categoryToClean: SystemCleanCategory?
     @State private var copiedCategoryID: String?
-
+    
     enum FilterType: String, CaseIterable, Identifiable {
         case all = "All"
         case developer = "Developer"
         case system = "System"
-
+        
         var id: String { rawValue }
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -22,7 +22,7 @@ struct SystemCleanerView: View {
                 title: "System Cleaner",
                 description: "Reclaim gigabytes of disk space across Xcode DerivedData, build caches, application logs, and the macOS Trash."
             )
-
+            
             // Top Metrics
             HStack(spacing: 12) {
                 MetricCard(
@@ -32,7 +32,7 @@ struct SystemCleanerView: View {
                     symbol: "internaldrive",
                     tint: systemCleaner.totalReclaimableBytes > 0 ? AppTheme.accent : AppTheme.success
                 )
-
+                
                 MetricCard(
                     title: "Developer Caches",
                     value: developerCachesFormatted,
@@ -40,7 +40,7 @@ struct SystemCleanerView: View {
                     symbol: "hammer",
                     tint: AppTheme.accent
                 )
-
+                
                 MetricCard(
                     title: "System Caches & Logs",
                     value: systemCachesFormatted,
@@ -49,7 +49,7 @@ struct SystemCleanerView: View {
                     tint: .secondary
                 )
             }
-
+            
             // Action & Filter Bar
             HStack(spacing: 12) {
                 // Segmented Filter
@@ -76,16 +76,16 @@ struct SystemCleanerView: View {
                 .padding(3)
                 .background(AppTheme.panel, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AppTheme.separator, lineWidth: 0.8))
-
+                
                 if systemCleaner.isScanning || systemCleaner.isCleaning {
                     ProgressView().controlSize(.small)
                     Text(systemCleaner.isCleaning ? "Cleaning files…" : "Scanning directories…")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
-
+                
                 Spacer()
-
+                
                 // Scan / Refresh Button
                 Button {
                     Task {
@@ -98,7 +98,7 @@ struct SystemCleanerView: View {
                 .disabled(systemCleaner.isScanning || systemCleaner.isCleaning)
                 .help(Text(verbatim: "Scan system cache and developer directories"))
             }
-
+            
             if let message = systemCleaner.message {
                 NotePanel(
                     symbol: "info.circle",
@@ -107,7 +107,7 @@ struct SystemCleanerView: View {
                     tint: AppTheme.accent
                 )
             }
-
+            
             // Categories Table
             VStack(spacing: 0) {
                 HStack {
@@ -123,9 +123,9 @@ struct SystemCleanerView: View {
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 13)
-
+                
                 Divider().overlay(AppTheme.separator)
-
+                
                 if filteredCategories.isEmpty {
                     EmptyStateView(
                         symbol: "sparkles",
@@ -136,7 +136,7 @@ struct SystemCleanerView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(filteredCategories) { cat in
                             categoryRow(cat)
-
+                            
                             if cat.id != filteredCategories.last?.id {
                                 Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                             }
@@ -171,7 +171,7 @@ struct SystemCleanerView: View {
             Text("BrewDesk will remove temporary files in \(target.path). Applications will recreate any required cache files automatically.")
         }
     }
-
+    
     private func categoryRow(_ cat: SystemCleanCategory) -> some View {
         HStack(spacing: 12) {
             Image(systemName: cat.symbol)
@@ -179,21 +179,21 @@ struct SystemCleanerView: View {
                 .foregroundStyle(cat.sizeBytes > 0 ? AppTheme.accent : .secondary)
                 .frame(width: 28, height: 28)
                 .background(AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-
+            
             VStack(alignment: .leading, spacing: 3) {
                 Text(cat.name)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
-
+                
                 Text(cat.path)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-
+            
             Spacer(minLength: 8)
-
+            
             Text(cat.isDeveloperFocused ? "Developer" : "System")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -201,12 +201,12 @@ struct SystemCleanerView: View {
                 .padding(.vertical, 4)
                 .background(AppTheme.subtleFill, in: Capsule())
                 .frame(width: 110, alignment: .leading)
-
+            
             Text(cat.sizeFormatted)
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundStyle(cat.sizeBytes > 0 ? AppTheme.accent : .secondary)
                 .frame(width: 90, alignment: .leading)
-
+            
             // Clean button
             Button {
                 categoryToClean = cat
@@ -218,7 +218,7 @@ struct SystemCleanerView: View {
             .controlSize(.small)
             .disabled(cat.sizeBytes == 0 || systemCleaner.isCleaning || systemCleaner.isScanning)
             .frame(width: 80, alignment: .center)
-
+            
             // Copy command button
             Button {
                 if ClipboardService.copy(cat.cleanCommand) {
@@ -247,7 +247,7 @@ struct SystemCleanerView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
     }
-
+    
     private var filteredCategories: [SystemCleanCategory] {
         systemCleaner.categories.filter { cat in
             let matchesFilter: Bool
@@ -256,23 +256,23 @@ struct SystemCleanerView: View {
             case .developer: matchesFilter = cat.isDeveloperFocused
             case .system: matchesFilter = !cat.isDeveloperFocused
             }
-
+            
             guard matchesFilter else { return false }
-
+            
             let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return true }
-
+            
             return cat.name.localizedCaseInsensitiveContains(trimmed) ||
-                cat.path.localizedCaseInsensitiveContains(trimmed) ||
-                cat.subtitle.localizedCaseInsensitiveContains(trimmed)
+            cat.path.localizedCaseInsensitiveContains(trimmed) ||
+            cat.subtitle.localizedCaseInsensitiveContains(trimmed)
         }
     }
-
+    
     private var developerCachesFormatted: String {
         let bytes = systemCleaner.categories.filter { $0.isDeveloperFocused }.reduce(0) { $0 + $1.sizeBytes }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
-
+    
     private var systemCachesFormatted: String {
         let bytes = systemCleaner.categories.filter { !$0.isDeveloperFocused }.reduce(0) { $0 + $1.sizeBytes }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)

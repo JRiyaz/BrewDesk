@@ -8,7 +8,7 @@ final class HomebrewStore: ObservableObject {
     @Published private(set) var packages: [HomebrewPackage] = []
     @Published private(set) var services: [HomebrewService] = []
     @Published private(set) var outdatedPackages: [HomebrewOutdatedPackage] = []
-
+    
     @Published private(set) var isCheckingInstallation = false
     @Published private(set) var isLoadingPackages = false
     @Published private(set) var isLoadingServices = false
@@ -16,28 +16,28 @@ final class HomebrewStore: ObservableObject {
     @Published private(set) var mutatingService: String?
     @Published private(set) var updatingPackage: String?
     @Published private(set) var isUpgradingAll = false
-
+    
     @Published private(set) var installationError: String?
     @Published private(set) var packagesError: String?
     @Published private(set) var servicesError: String?
     @Published private(set) var updatesError: String?
     @Published private(set) var searchError: String?
-
+    
     @Published private(set) var searchResults: [HomebrewSearchResult] = []
     @Published private(set) var isSearching = false
     @Published private(set) var installingPackage: String?
-
+    
     @Published private(set) var installationCheckedAt: Date?
     @Published private(set) var packagesLoadedAt: Date?
     @Published private(set) var servicesLoadedAt: Date?
     @Published private(set) var updatesCheckedAt: Date?
-
+    
     private let client = HomebrewClient()
-
+    
     var configuredCustomPath: String {
         UserDefaults.standard.string(forKey: "customHomebrewPath") ?? ""
     }
-
+    
     var formulaCount: Int { packages.filter { $0.kind == .formula }.count }
     var caskCount: Int { packages.filter { $0.kind == .cask }.count }
     var directCount: Int { packages.filter { $0.isDirect }.count }
@@ -46,13 +46,13 @@ final class HomebrewStore: ObservableObject {
     var hasLoadedPackages: Bool { packagesLoadedAt != nil }
     var hasLoadedServices: Bool { servicesLoadedAt != nil }
     var hasCheckedUpdates: Bool { updatesCheckedAt != nil }
-
+    
     func checkInstallation(customPath: String? = nil) async {
         guard !isCheckingInstallation else { return }
         isCheckingInstallation = true
         installationError = nil
         defer { isCheckingInstallation = false }
-
+        
         let path = customPath ?? configuredCustomPath
         do {
             let detected = try await client.detectInstallation(customPath: path)
@@ -66,7 +66,7 @@ final class HomebrewStore: ObservableObject {
             installationCheckedAt = Date()
         }
     }
-
+    
     private func ensureInstallation(customPath: String? = nil) async throws -> HomebrewInstallation {
         if let installation { return installation }
         let path = customPath ?? configuredCustomPath
@@ -76,13 +76,13 @@ final class HomebrewStore: ObservableObject {
         self.installationCheckedAt = Date()
         return detected
     }
-
+    
     func loadInstalledPackages(customPath: String? = nil) async {
         guard !isLoadingPackages else { return }
         isLoadingPackages = true
         packagesError = nil
         defer { isLoadingPackages = false }
-
+        
         let install: HomebrewInstallation
         do {
             install = try await ensureInstallation(customPath: customPath)
@@ -96,7 +96,7 @@ final class HomebrewStore: ObservableObject {
             packagesError = error.localizedDescription
             return
         }
-
+        
         do {
             let loadedPackages = try await client.listInstalledPackages(using: install)
             try Task.checkCancellation()
@@ -108,13 +108,13 @@ final class HomebrewStore: ObservableObject {
             packagesError = error.localizedDescription
         }
     }
-
+    
     func loadServices(customPath: String? = nil) async {
         guard !isLoadingServices else { return }
         isLoadingServices = true
         servicesError = nil
         defer { isLoadingServices = false }
-
+        
         let install: HomebrewInstallation
         do {
             install = try await ensureInstallation(customPath: customPath)
@@ -124,7 +124,7 @@ final class HomebrewStore: ObservableObject {
             servicesError = error.localizedDescription
             return
         }
-
+        
         do {
             let loadedServices = try await client.listServices(using: install)
             try Task.checkCancellation()
@@ -136,13 +136,13 @@ final class HomebrewStore: ObservableObject {
             servicesError = error.localizedDescription
         }
     }
-
+    
     func startService(name: String, customPath: String? = nil) async {
         guard mutatingService == nil else { return }
         mutatingService = name
         servicesError = nil
         defer { mutatingService = nil }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.startService(name: name, using: install)
@@ -154,13 +154,13 @@ final class HomebrewStore: ObservableObject {
             servicesError = error.localizedDescription
         }
     }
-
+    
     func stopService(name: String, customPath: String? = nil) async {
         guard mutatingService == nil else { return }
         mutatingService = name
         servicesError = nil
         defer { mutatingService = nil }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.stopService(name: name, using: install)
@@ -172,13 +172,13 @@ final class HomebrewStore: ObservableObject {
             servicesError = error.localizedDescription
         }
     }
-
+    
     func checkUpdates(customPath: String? = nil) async {
         guard !isCheckingUpdates else { return }
         isCheckingUpdates = true
         updatesError = nil
         defer { isCheckingUpdates = false }
-
+        
         let install: HomebrewInstallation
         do {
             install = try await ensureInstallation(customPath: customPath)
@@ -188,7 +188,7 @@ final class HomebrewStore: ObservableObject {
             updatesError = error.localizedDescription
             return
         }
-
+        
         do {
             let outdated = try await client.listOutdatedPackages(using: install)
             try Task.checkCancellation()
@@ -200,13 +200,13 @@ final class HomebrewStore: ObservableObject {
             updatesError = error.localizedDescription
         }
     }
-
+    
     func upgradePackage(package: HomebrewOutdatedPackage, customPath: String? = nil) async {
         guard updatingPackage == nil && !isUpgradingAll else { return }
         updatingPackage = package.name
         updatesError = nil
         defer { updatingPackage = nil }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.upgradePackage(name: package.name, kind: package.kind, using: install)
@@ -219,13 +219,13 @@ final class HomebrewStore: ObservableObject {
             updatesError = error.localizedDescription
         }
     }
-
+    
     func upgradeAll(customPath: String? = nil) async {
         guard !isUpgradingAll && updatingPackage == nil else { return }
         isUpgradingAll = true
         updatesError = nil
         defer { isUpgradingAll = false }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.upgradeAll(using: install)
@@ -238,7 +238,7 @@ final class HomebrewStore: ObservableObject {
             updatesError = error.localizedDescription
         }
     }
-
+    
     func searchCatalogue(query: String, kind: HomebrewPackageKind, customPath: String? = nil) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -247,11 +247,11 @@ final class HomebrewStore: ObservableObject {
             searchError = nil
             return
         }
-
+        
         isSearching = true
         searchError = nil
         defer { isSearching = false }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             let results = try await client.searchCatalogue(query: trimmed, kind: kind, using: install)
@@ -264,13 +264,13 @@ final class HomebrewStore: ObservableObject {
             searchResults = []
         }
     }
-
+    
     func installPackage(name: String, kind: HomebrewPackageKind, customPath: String? = nil) async {
         guard installingPackage == nil else { return }
         installingPackage = name
         searchError = nil
         defer { installingPackage = nil }
-
+        
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.installPackage(name: name, kind: kind, using: install)

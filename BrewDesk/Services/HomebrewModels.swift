@@ -3,9 +3,9 @@ import Foundation
 enum HomebrewPackageKind: String, CaseIterable, Identifiable, Codable {
     case formula
     case cask
-
+    
     var id: String { rawValue }
-
+    
     var title: String {
         switch self {
         case .formula: "Formula"
@@ -19,16 +19,16 @@ struct HomebrewPackage: Identifiable, Hashable, Codable {
     let version: String
     let kind: HomebrewPackageKind
     let isDirect: Bool
-
+    
     init(name: String, version: String, kind: HomebrewPackageKind, isDirect: Bool = true) {
         self.name = name
         self.version = version
         self.kind = kind
         self.isDirect = isDirect
     }
-
+    
     var id: String { "\(kind.rawValue):\(name)" }
-
+    
     var versionLabel: String {
         version.isEmpty ? "Version not reported" : version
     }
@@ -39,13 +39,13 @@ enum HomebrewServiceStatus: String, CaseIterable, Identifiable, Codable, Sendabl
     case stopped
     case error
     case unknown
-
+    
     var id: String { rawValue }
-
+    
     var isRunning: Bool {
         self == .started
     }
-
+    
     var title: String {
         switch self {
         case .started: "Running"
@@ -61,7 +61,7 @@ struct HomebrewService: Identifiable, Hashable, Sendable {
     let status: HomebrewServiceStatus
     let user: String?
     let file: String?
-
+    
     var id: String { name }
 }
 
@@ -71,9 +71,9 @@ struct HomebrewOutdatedPackage: Identifiable, Hashable, Sendable {
     let currentVersion: String
     let kind: HomebrewPackageKind
     let isPinned: Bool
-
+    
     var id: String { "\(kind.rawValue):\(name)" }
-
+    
     var upgradeCommand: String {
         kind == .cask ? "brew upgrade --cask \(name)" : "brew upgrade \(name)"
     }
@@ -84,9 +84,9 @@ struct HomebrewSearchResult: Identifiable, Hashable, Sendable {
     let kind: HomebrewPackageKind
     let isInstalled: Bool
     let isDisabled: Bool
-
+    
     var id: String { "\(kind.rawValue):\(name)" }
-
+    
     var installCommand: String {
         kind == .cask ? "brew install --cask \(name)" : "brew install \(name)"
     }
@@ -102,7 +102,7 @@ enum HomebrewClientError: LocalizedError {
     case detectionFailed(String)
     case invalidCustomPath(String)
     case commandFailed(command: String, reason: String)
-
+    
     var errorDescription: String? {
         switch self {
         case .detectionFailed(let details):

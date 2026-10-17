@@ -3,7 +3,7 @@ import SwiftUI
 
 struct AppSidebar: View {
     @Binding var selection: AppSection
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 12) {
@@ -12,7 +12,7 @@ struct AppSidebar: View {
                     .interpolation(.high)
                     .frame(width: 40, height: 40)
                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-
+                
                 VStack(alignment: .leading, spacing: 2) {
                     Text("BrewDesk")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -24,7 +24,7 @@ struct AppSidebar: View {
             }
             .padding(.horizontal, 8)
             .padding(.top, 6)
-
+            
             VStack(alignment: .leading, spacing: 6) {
                 SidebarGroupLabel(title: "HOMEBREW")
                 ForEach(AppSection.homebrew) { section in
@@ -33,7 +33,7 @@ struct AppSidebar: View {
                     }
                 }
             }
-
+            
             VStack(alignment: .leading, spacing: 6) {
                 SidebarGroupLabel(title: "UTILITIES")
                 ForEach(AppSection.utilities) { section in
@@ -42,9 +42,9 @@ struct AppSidebar: View {
                     }
                 }
             }
-
+            
             Spacer(minLength: 8)
-
+            
             VStack(alignment: .leading, spacing: 12) {
                 Divider().overlay(AppTheme.separator)
                 SidebarItem(section: .settings, isSelected: selection == .settings) {
@@ -62,7 +62,7 @@ struct AppSidebar: View {
 
 private struct SidebarGroupLabel: View {
     let title: String
-
+    
     var body: some View {
         Text(title)
             .font(.system(size: 9, weight: .bold, design: .rounded))
@@ -78,7 +78,7 @@ private struct SidebarItem: View {
     let section: AppSection
     let isSelected: Bool
     let action: () -> Void
-
+    
     var body: some View {
         Button(action: action) {
             HStack(spacing: 11) {
@@ -87,11 +87,11 @@ private struct SidebarItem: View {
                     .symbolRenderingMode(.hierarchical)
                     .frame(width: 19)
                     .foregroundStyle(isSelected ? AppTheme.accent : Color.secondary)
-
+                
                 Text(section.title)
                     .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? .primary : .secondary)
-
+                
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 11)
@@ -117,7 +117,7 @@ private struct SidebarItem: View {
 
 private struct SelectedSidebarGlass: ViewModifier {
     let isSelected: Bool
-
+    
     @ViewBuilder
     func body(content: Content) -> some View {
         if isSelected {

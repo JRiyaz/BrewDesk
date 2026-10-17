@@ -6,7 +6,7 @@ struct SettingsView: View {
     @AppStorage("customHomebrewPath") private var customHomebrewPath = ""
     @AppStorage("confirmMutatingActions") private var confirmMutatingActions = true
     @State private var validationGeneration = 0
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -14,10 +14,10 @@ struct SettingsView: View {
                 title: "Make BrewDesk yours",
                 description: "A few thoughtful preferences. No account, analytics, or always-on helper."
             )
-
+            
             VStack(alignment: .leading, spacing: 18) {
                 SettingsSectionHeading(symbol: "circle.lefthalf.filled", title: "Appearance", detail: "Choose how the interface follows your Mac.")
-
+                
                 HStack(spacing: 18) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Theme")
@@ -41,10 +41,10 @@ struct SettingsView: View {
             .padding(19)
             .background(AppTheme.panel, in: AppTheme.cardShape)
             .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
-
+            
             VStack(alignment: .leading, spacing: 18) {
                 SettingsSectionHeading(symbol: "shippingbox", title: "Homebrew", detail: "Choose a custom executable path if auto-detection needs an override.")
-
+                
                 VStack(alignment: .leading, spacing: 7) {
                     Text("Custom brew path")
                         .font(.system(size: 11, weight: .semibold))
@@ -55,7 +55,7 @@ struct SettingsView: View {
                     Text("Leave blank to check standard locations and the app’s PATH. Use the full executable path if Homebrew is installed elsewhere.")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
-
+                    
                     HStack(spacing: 10) {
                         Button {
                             validationGeneration += 1
@@ -64,7 +64,7 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.bordered)
                         .disabled(homebrew.isCheckingInstallation)
-
+                        
                         if let installation = homebrew.installation {
                             Text("Found · \(installation.version) · \(installation.prefix)")
                                 .font(.system(size: 10))
@@ -85,10 +85,10 @@ struct SettingsView: View {
             .padding(19)
             .background(AppTheme.panel, in: AppTheme.cardShape)
             .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
-
+            
             VStack(alignment: .leading, spacing: 18) {
                 SettingsSectionHeading(symbol: "checkmark.shield", title: "Safety", detail: "Keep system-changing workflows explicit.")
-
+                
                 Toggle(isOn: $confirmMutatingActions) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Confirm system-changing actions")
@@ -103,14 +103,14 @@ struct SettingsView: View {
             .padding(19)
             .background(AppTheme.panel, in: AppTheme.cardShape)
             .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
-
+            
             NotePanel(
                 symbol: "moon.zzz",
                 title: "Foreground utility",
                 message: "Closing the last window quits BrewDesk. System checks run only when you open a feature or request a refresh; no resident agent or polling loop is used.",
                 tint: AppTheme.success
             )
-
+            
             HStack {
                 Text("BrewDesk")
                     .font(.system(size: 10, weight: .semibold))
@@ -134,7 +134,7 @@ private struct SettingsSectionHeading: View {
     let symbol: String
     let title: String
     let detail: String
-
+    
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
@@ -142,7 +142,7 @@ private struct SettingsSectionHeading: View {
                 .foregroundStyle(AppTheme.accent)
                 .frame(width: 35, height: 35)
                 .background(AppTheme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))

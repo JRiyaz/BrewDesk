@@ -4,22 +4,22 @@ struct UpdatesView: View {
     @ObservedObject var homebrew: HomebrewStore
     @State private var refreshGeneration = 0
     @State private var copiedPackageID: String?
-
+    
     private var formulaOutdatedCount: Int {
         homebrew.outdatedPackages.filter { $0.kind == .formula }.count
     }
-
+    
     private var caskOutdatedCount: Int {
         homebrew.outdatedPackages.filter { $0.kind == .cask }.count
     }
-
+    
     private var lastCheckedFormatted: String {
         guard let date = homebrew.updatesCheckedAt else { return "Never" }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         return formatter.localizedString(for: date, relativeTo: Date())
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -27,7 +27,7 @@ struct UpdatesView: View {
                 title: "Stay up to date",
                 description: "Review outdated formulae and casks before choosing what to update. BrewDesk runs `brew outdated` on demand."
             )
-
+            
             HStack(spacing: 12) {
                 MetricCard(
                     title: "Formulae",
@@ -45,7 +45,7 @@ struct UpdatesView: View {
                     symbol: "clock"
                 )
             }
-
+            
             HStack(spacing: 12) {
                 if homebrew.isCheckingUpdates {
                     ProgressView().controlSize(.small)
@@ -59,9 +59,9 @@ struct UpdatesView: View {
                         StatusPill(title: "\(homebrew.outdatedPackages.count) UPDATES", symbol: "arrow.triangle.2.circlepath", tint: AppTheme.warning)
                     }
                 }
-
+                
                 Spacer()
-
+                
                 Button {
                     refreshGeneration += 1
                 } label: {
@@ -69,7 +69,7 @@ struct UpdatesView: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(homebrew.isCheckingUpdates || homebrew.isUpgradingAll || homebrew.updatingPackage != nil)
-
+                
                 if !homebrew.outdatedPackages.isEmpty {
                     Button {
                         Task { await homebrew.upgradeAll() }
@@ -85,7 +85,7 @@ struct UpdatesView: View {
                     .disabled(homebrew.isCheckingUpdates || homebrew.isUpgradingAll || homebrew.updatingPackage != nil)
                 }
             }
-
+            
             if let error = homebrew.updatesError {
                 NotePanel(
                     symbol: "exclamationmark.triangle",
@@ -94,7 +94,7 @@ struct UpdatesView: View {
                     tint: AppTheme.warning
                 )
             }
-
+            
             VStack(spacing: 0) {
                 HStack {
                     Text("PACKAGE")
@@ -110,9 +110,9 @@ struct UpdatesView: View {
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 13)
-
+                
                 Divider().overlay(AppTheme.separator)
-
+                
                 if homebrew.isCheckingUpdates && homebrew.outdatedPackages.isEmpty {
                     EmptyStateView(
                         symbol: "hourglass",
@@ -145,9 +145,9 @@ struct UpdatesView: View {
                                         .foregroundStyle(.tertiary)
                                         .lineLimit(1)
                                 }
-
+                                
                                 Spacer(minLength: 8)
-
+                                
                                 Text(package.kind.title)
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundStyle(.secondary)
@@ -155,14 +155,14 @@ struct UpdatesView: View {
                                     .padding(.vertical, 5)
                                     .background(AppTheme.subtleFill, in: Capsule())
                                     .frame(width: 80, alignment: .leading)
-
+                                
                                 Text(package.installedVersion)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                                     .frame(width: 110, alignment: .leading)
-
+                                
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.right")
                                         .font(.system(size: 9))
@@ -174,7 +174,7 @@ struct UpdatesView: View {
                                         .truncationMode(.middle)
                                 }
                                 .frame(width: 110, alignment: .leading)
-
+                                
                                 Button {
                                     if ClipboardService.copy(package.upgradeCommand) {
                                         copiedPackageID = package.id
@@ -198,7 +198,7 @@ struct UpdatesView: View {
                                 .buttonStyle(.plain)
                                 .help(Text(verbatim: copiedPackageID == package.id ? "Copied!" : "Copy update command: \(package.upgradeCommand)"))
                                 .frame(width: 80, alignment: .center)
-
+                                
                                 HStack {
                                     if homebrew.updatingPackage == package.name {
                                         ProgressView().controlSize(.small)
@@ -218,7 +218,7 @@ struct UpdatesView: View {
                             }
                             .padding(.horizontal, 18)
                             .padding(.vertical, 12)
-
+                            
                             if package.id != homebrew.outdatedPackages.last?.id {
                                 Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                             }

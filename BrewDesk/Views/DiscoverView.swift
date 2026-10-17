@@ -5,7 +5,7 @@ struct DiscoverView: View {
     @ObservedObject var homebrew: HomebrewStore
     @State private var selectedKind: CatalogueKind = .formulae
     @State private var copiedResultID: String?
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -13,7 +13,7 @@ struct DiscoverView: View {
                 title: "Find your next tool",
                 description: "Search the official Homebrew catalogue for formulae and casks, inspect install commands, and install packages."
             )
-
+            
             HStack(spacing: 12) {
                 Picker("Catalogue type", selection: $selectedKind) {
                     ForEach(CatalogueKind.allCases) { kind in
@@ -22,9 +22,9 @@ struct DiscoverView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 320)
-
+                
                 Spacer()
-
+                
                 if homebrew.isSearching {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
@@ -46,7 +46,7 @@ struct DiscoverView: View {
                     )
                 }
             }
-
+            
             if let error = homebrew.searchError {
                 NotePanel(
                     symbol: "exclamationmark.triangle",
@@ -55,7 +55,7 @@ struct DiscoverView: View {
                     tint: AppTheme.warning
                 )
             }
-
+            
             VStack(spacing: 0) {
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     EmptyStateView(
@@ -89,9 +89,9 @@ struct DiscoverView: View {
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 13)
-
+                    
                     Divider().overlay(AppTheme.separator)
-
+                    
                     LazyVStack(spacing: 0) {
                         ForEach(homebrew.searchResults) { item in
                             HStack(spacing: 12) {
@@ -105,9 +105,9 @@ struct DiscoverView: View {
                                         .foregroundStyle(.tertiary)
                                         .lineLimit(1)
                                 }
-
+                                
                                 Spacer(minLength: 8)
-
+                                
                                 Text(item.kind.title)
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundStyle(.secondary)
@@ -115,7 +115,7 @@ struct DiscoverView: View {
                                     .padding(.vertical, 5)
                                     .background(AppTheme.subtleFill, in: Capsule())
                                     .frame(width: 80, alignment: .leading)
-
+                                
                                 HStack(spacing: 5) {
                                     if item.isInstalled {
                                         Circle()
@@ -144,7 +144,7 @@ struct DiscoverView: View {
                                 .padding(.vertical, 5)
                                 .background(AppTheme.subtleFill, in: Capsule())
                                 .frame(width: 100, alignment: .leading)
-
+                                
                                 Button {
                                     if ClipboardService.copy(item.installCommand) {
                                         copiedResultID = item.id
@@ -168,7 +168,7 @@ struct DiscoverView: View {
                                 .buttonStyle(.plain)
                                 .help(Text(verbatim: copiedResultID == item.id ? "Copied!" : "Copy install command: \(item.installCommand)"))
                                 .frame(width: 80, alignment: .center)
-
+                                
                                 HStack {
                                     if homebrew.installingPackage == item.name {
                                         ProgressView().controlSize(.small)
@@ -194,7 +194,7 @@ struct DiscoverView: View {
                             }
                             .padding(.horizontal, 18)
                             .padding(.vertical, 12)
-
+                            
                             if item.id != homebrew.searchResults.last?.id {
                                 Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                             }

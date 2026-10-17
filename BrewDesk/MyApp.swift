@@ -5,7 +5,7 @@ import SwiftUI
 struct MyApp: App {
     @NSApplicationDelegateAdaptor(AppLifecycle.self) private var appLifecycle
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
-
+    
     var body: some Scene {
         WindowGroup("BrewDesk") {
             ContentView()

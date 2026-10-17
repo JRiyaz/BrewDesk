@@ -4,7 +4,7 @@ struct AppHeader: View {
     let section: AppSection
     @Binding var searchText: String
     let onOpenSettings: () -> Void
-
+    
     var body: some View {
         HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
@@ -16,9 +16,9 @@ struct AppHeader: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
+            
             Spacer(minLength: 12)
-
+            
             if section.supportsSearch {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
@@ -48,7 +48,7 @@ struct AppHeader: View {
                         .strokeBorder(AppTheme.separator, lineWidth: 0.8)
                 }
             }
-
+            
             Button(action: onOpenSettings) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 14, weight: .medium))

@@ -4,13 +4,13 @@ struct PageIntro: View {
     let eyebrow: String?
     let title: String
     let description: String
-
+    
     init(eyebrow: String? = nil, title: String, description: String) {
         self.eyebrow = eyebrow
         self.title = title
         self.description = description
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             if let eyebrow {
@@ -33,7 +33,7 @@ struct PageIntro: View {
 struct SectionCaption: View {
     let title: String
     var trailing: String? = nil
-
+    
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
@@ -53,7 +53,7 @@ struct StatusPill: View {
     let title: String
     let symbol: String
     var tint: Color = .secondary
-
+    
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: symbol)
@@ -73,7 +73,7 @@ struct EmptyStateView: View {
     let symbol: String
     let title: String
     let message: String
-
+    
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: symbol)
@@ -82,11 +82,11 @@ struct EmptyStateView: View {
                 .foregroundStyle(AppTheme.accent.opacity(0.8))
                 .frame(width: 58, height: 58)
                 .background(AppTheme.accent.opacity(0.08), in: Circle())
-
+            
             Text(title)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
-
+            
             Text(message)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
@@ -105,7 +105,7 @@ struct NotePanel: View {
     let title: String
     let message: String
     var tint: Color = .secondary
-
+    
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
@@ -113,7 +113,7 @@ struct NotePanel: View {
                 .foregroundStyle(tint)
                 .frame(width: 32, height: 32)
                 .background(tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
@@ -138,7 +138,7 @@ struct MetricCard: View {
     let symbol: String
     var statusSymbol: String? = nil
     var tint: Color = AppTheme.accent
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
@@ -147,25 +147,25 @@ struct MetricCard: View {
                     .foregroundStyle(tint)
                     .frame(width: 34, height: 34)
                     .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
+                
                 Spacer()
-
+                
                 if let statusSymbol {
                     Image(systemName: statusSymbol)
                         .font(.system(size: 13))
                         .foregroundStyle(statusSymbol.contains("fill") ? AppTheme.success : .secondary)
                 }
             }
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-
+                
                 Text(value)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
-
+                
                 if let detail {
                     Text(detail)
                         .font(.system(size: 10))
@@ -185,7 +185,7 @@ struct FeatureTile: View {
     let section: AppSection
     let detail: String
     let action: () -> Void
-
+    
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 14) {
@@ -202,7 +202,7 @@ struct FeatureTile: View {
                         .foregroundStyle(.tertiary)
                         .padding(.top, 3)
                 }
-
+                
                 VStack(alignment: .leading, spacing: 5) {
                     Text(section.title)
                         .font(.system(size: 13, weight: .semibold))

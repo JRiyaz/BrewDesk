@@ -13,7 +13,7 @@ struct SystemCleanCategory: Identifiable, Hashable, Sendable {
     var sizeBytes: Int64 = 0
     var itemCount: Int = 0
     var exists: Bool = false
-
+    
     var sizeFormatted: String {
         guard exists && sizeBytes > 0 else { return "0 B" }
         return ByteCountFormatter.string(fromByteCount: sizeBytes, countStyle: .file)
@@ -87,40 +87,40 @@ final class SystemCleanerService: ObservableObject {
             isDeveloperFocused: true
         )
     ]
-
+    
     @Published private(set) var isScanning = false
     @Published private(set) var isCleaning = false
     @Published private(set) var activeCategoryCleaning: String?
     @Published private(set) var lastScannedAt: Date?
     @Published private(set) var message: String?
-
+    
     var totalReclaimableBytes: Int64 {
         categories.reduce(0) { $0 + $1.sizeBytes }
     }
-
+    
     var totalReclaimableFormatted: String {
         ByteCountFormatter.string(fromByteCount: totalReclaimableBytes, countStyle: .file)
     }
-
+    
     func scanAll() async {
         guard !isScanning else { return }
         isScanning = true
         message = nil
         defer { isScanning = false }
-
+        
         let currentCats = self.categories
-
+        
         let updatedCats = await Task.detached(priority: .userInitiated) { () -> [SystemCleanCategory] in
             var updated: [SystemCleanCategory] = []
             let fm = FileManager.default
-
+            
             for var cat in currentCats {
                 var isDir: ObjCBool = false
                 if fm.fileExists(atPath: cat.path, isDirectory: &isDir) {
                     cat.exists = true
                     var totalSize: Int64 = 0
                     var count = 0
-
+                    
                     if isDir.boolValue {
                         let url = URL(fileURLWithPath: cat.path)
                         if let enumerator = fm.enumerator(
@@ -142,7 +142,7 @@ final class SystemCleanerService: ObservableObject {
                         totalSize = size
                         count = 1
                     }
-
+                    
                     cat.sizeBytes = totalSize
                     cat.itemCount = count
                 } else {
@@ -154,11 +154,11 @@ final class SystemCleanerService: ObservableObject {
             }
             return updated
         }.value
-
+        
         self.categories = updatedCats
         self.lastScannedAt = Date()
     }
-
+    
     @discardableResult
     func cleanCategory(_ category: SystemCleanCategory) async -> Bool {
         guard !isCleaning else { return false }
@@ -169,10 +169,10 @@ final class SystemCleanerService: ObservableObject {
             isCleaning = false
             activeCategoryCleaning = nil
         }
-
+        
         let fm = FileManager.default
         let path = category.path
-
+        
         let success = await Task.detached(priority: .userInitiated) { () -> Bool in
             guard fm.fileExists(atPath: path) else { return true }
             do {
@@ -186,7 +186,7 @@ final class SystemCleanerService: ObservableObject {
                 return false
             }
         }.value
-
+        
         if success {
             self.message = "Successfully cleared \(category.name)."
             await scanAll()

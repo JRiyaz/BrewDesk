@@ -29,18 +29,18 @@ enum CommandCatalog {
 struct CommandsView: View {
     let searchText: String
     @State private var copiedCommandID: String?
-
+    
     private var filteredCommands: [CommandReference] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return CommandCatalog.items }
         return CommandCatalog.items.filter { item in
             item.title.localizedCaseInsensitiveContains(query)
-                || item.description.localizedCaseInsensitiveContains(query)
-                || item.command.localizedCaseInsensitiveContains(query)
-                || item.riskLabel.localizedCaseInsensitiveContains(query)
+            || item.description.localizedCaseInsensitiveContains(query)
+            || item.command.localizedCaseInsensitiveContains(query)
+            || item.riskLabel.localizedCaseInsensitiveContains(query)
         }
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
@@ -48,14 +48,14 @@ struct CommandsView: View {
                 title: "The right command, clearly explained",
                 description: "A curated Homebrew command catalogue. Copying only copies text; BrewDesk never executes commands from this screen."
             )
-
+            
             NotePanel(
                 symbol: "doc.on.clipboard",
                 title: "Preview before you act",
                 message: "Commands that change system state are labeled. Replace placeholders such as `<formula>` with a package name and review the command before running it yourself.",
                 tint: AppTheme.accent
             )
-
+            
             HStack {
                 SectionCaption(title: "Command library", trailing: "\(filteredCommands.count) commands")
                 Spacer()
@@ -64,7 +64,7 @@ struct CommandsView: View {
                     .tracking(0.8)
                     .foregroundStyle(.secondary)
             }
-
+            
             if filteredCommands.isEmpty {
                 EmptyStateView(
                     symbol: "magnifyingglass",
@@ -95,13 +95,13 @@ private struct CommandRow: View {
     let item: CommandReference
     let isCopied: Bool
     let onCopy: () -> Void
-
+    
     private var tint: Color {
         if !item.changesSystem { return .secondary }
         if item.riskLabel == "Destructive" { return AppTheme.danger }
         return AppTheme.warning
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(alignment: .top, spacing: 12) {
@@ -121,7 +121,7 @@ private struct CommandRow: View {
                     tint: tint
                 )
             }
-
+            
             HStack(spacing: 10) {
                 Text(item.command)
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -132,7 +132,7 @@ private struct CommandRow: View {
                     .padding(.vertical, 10)
                     .padding(.horizontal, 12)
                     .background(AppTheme.insetPanel, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-
+                
                 Button(action: onCopy) {
                     Label(isCopied ? "Copied" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
                         .font(.system(size: 10, weight: .semibold))
