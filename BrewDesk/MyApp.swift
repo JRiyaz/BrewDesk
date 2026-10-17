@@ -3,7 +3,7 @@ import SwiftUI
 struct MyApp: View {
     @State private var selection: AppSection = .overview
     @State private var searchText = ""
-
+    
     var body: some View {
         NavigationSplitView {
             AppSidebar(selection: $selection)
@@ -14,10 +14,10 @@ struct MyApp: View {
                     searchText: $searchText,
                     onOpenSettings: { selection = .settings }
                 )
-
+                
                 Divider()
                     .overlay(AppTheme.separator)
-
+                
                 ScrollView {
                     pageContent
                         .frame(maxWidth: 1020, alignment: .leading)
@@ -34,7 +34,7 @@ struct MyApp: View {
         .frame(minWidth: 980, minHeight: 680)
         .background(AppTheme.canvas)
     }
-
+    
     @ViewBuilder
     private var pageContent: some View {
         switch selection {
@@ -56,7 +56,7 @@ struct MyApp: View {
             SettingsPage()
         }
     }
-
+    
     private func navigate(to section: AppSection) {
         searchText = ""
         selection = section

@@ -8,7 +8,7 @@ struct BrewDeskApp: App {
 
     var body: some Scene {
         WindowGroup("BrewDesk") {
-            ContentView()
+            MyApp()
                 .preferredColorScheme(
                     (AppAppearance(rawValue: appearanceMode) ?? .system).colorScheme
                 )

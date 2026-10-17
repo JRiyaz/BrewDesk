@@ -18,6 +18,7 @@ The current project is the initial UI/design shell.
 ### Available in the design shell
 
 - Sidebar navigation for Overview, Installed, Discover, Updates, Cleaner, Ports, Commands, and Settings.
+- Custom BrewDesk beer-mug app icon in `Assets.xcassets/AppIcon.appiconset`, with standard macOS icon sizes.
 - System, Light, and Dark appearance preferences.
 - Curated Homebrew command reference with search and copy-to-clipboard actions.
 - Preview, empty, and informational states for features that are not yet connected to system services.
