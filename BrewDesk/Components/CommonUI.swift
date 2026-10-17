@@ -131,6 +131,56 @@ struct NotePanel: View {
     }
 }
 
+struct MetricCard: View {
+    let title: String
+    let value: String
+    var detail: String? = nil
+    let symbol: String
+    var statusSymbol: String? = nil
+    var tint: Color = AppTheme.accent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                Image(systemName: symbol)
+                    .font(.system(size: 16))
+                    .foregroundStyle(tint)
+                    .frame(width: 34, height: 34)
+                    .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                Spacer()
+
+                if let statusSymbol {
+                    Image(systemName: statusSymbol)
+                        .font(.system(size: 13))
+                        .foregroundStyle(statusSymbol.contains("fill") ? AppTheme.success : .secondary)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+
+                Text(value)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
+
+                if let detail {
+                    Text(detail)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(AppTheme.panel, in: AppTheme.cardShape)
+        .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
+    }
+}
+
 struct FeatureTile: View {
     let section: AppSection
     let detail: String

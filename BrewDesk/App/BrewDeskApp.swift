@@ -8,7 +8,7 @@ struct BrewDeskApp: App {
 
     var body: some Scene {
         WindowGroup("BrewDesk") {
-            MyApp()
+            ContentView()
                 .preferredColorScheme(
                     (AppAppearance(rawValue: appearanceMode) ?? .system).colorScheme
                 )
@@ -16,8 +16,14 @@ struct BrewDeskApp: App {
         .defaultSize(width: 1220, height: 820)
         .windowResizability(.contentMinSize)
         .commands {
-            // BrewDesk is a single-window utility. The red close button exits the app.
             CommandGroup(replacing: .newItem) { }
         }
+    }
+}
+
+/// Closes the app when the last window is closed.
+final class AppLifecycle: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
     }
 }

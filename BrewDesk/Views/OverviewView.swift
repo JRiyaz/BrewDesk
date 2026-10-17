@@ -1,10 +1,9 @@
 import AppKit
 import SwiftUI
 
-struct OverviewPage: View {
+struct OverviewView: View {
     let onNavigate: (AppSection) -> Void
     @ObservedObject var homebrew: HomebrewStore
-    @AppStorage("customHomebrewPath") private var customHomebrewPath = ""
     @State private var checkGeneration = 0
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -24,21 +23,21 @@ struct OverviewPage: View {
             }
 
             LazyVGrid(columns: columns, spacing: 12) {
-                OverviewStatusCard(
+                MetricCard(
                     title: "Homebrew",
                     value: homebrewStatus,
                     detail: homebrew.installation?.prefix ?? "Checks a local executable only",
                     symbol: "shippingbox",
                     statusSymbol: homebrew.installation != nil ? "checkmark.circle.fill" : (homebrew.isCheckingInstallation ? "hourglass" : "circle.dashed")
                 )
-                OverviewStatusCard(
+                MetricCard(
                     title: "Installed packages",
                     value: homebrew.hasLoadedPackages ? "\(homebrew.packages.count)" : "Not loaded",
                     detail: homebrew.hasLoadedPackages ? "\(homebrew.formulaCount) formulae · \(homebrew.caskCount) casks" : "Open Installed to load local packages",
                     symbol: "square.stack.3d.up",
                     statusSymbol: homebrew.hasLoadedPackages ? "checkmark.circle.fill" : "tray"
                 )
-                OverviewStatusCard(
+                MetricCard(
                     title: "Available updates",
                     value: updatesStatus,
                     detail: updatesDetail,
@@ -85,7 +84,7 @@ struct OverviewPage: View {
         }
         .task(id: checkGeneration) {
             if checkGeneration > 0 || (homebrew.installation == nil && homebrew.installationError == nil) {
-                await homebrew.checkInstallation(customPath: customHomebrewPath)
+                await homebrew.checkInstallation()
             }
         }
     }
@@ -136,103 +135,33 @@ struct OverviewPage: View {
 
                 Text("Your Mac,\nneatly managed.")
                     .font(.system(size: 29, weight: .bold, design: .rounded))
-                    .tracking(-0.8)
                     .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
 
-                Text("A focused home for Homebrew and everyday system utilities.")
-                    .font(.system(size: 12))
+                Text("A quiet, native companion for Homebrew. Review packages, inspect listening ports, and run maintenance only when you choose.")
+                    .font(.system(size: 13))
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 390, alignment: .leading)
-
-                HStack(spacing: 9) {
-                    Button {
-                        checkGeneration += 1
-                    } label: {
-                        Label(homebrew.isCheckingInstallation ? "Checking…" : "Check Homebrew", systemImage: "arrow.clockwise")
-                            .font(.system(size: 11, weight: .semibold))
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 7)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(homebrew.isCheckingInstallation)
-
-                    Button {
-                        onNavigate(.settings)
-                    } label: {
-                        Text("Settings")
-                            .font(.system(size: 11, weight: .semibold))
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 7)
-                    }
-                    .buttonStyle(.bordered)
-                }
+                    .lineSpacing(2)
+                    .frame(maxWidth: 510, alignment: .leading)
             }
 
             Spacer(minLength: 0)
 
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 150, height: 150)
-                .accessibilityHidden(true)
-        }
-        .padding(.horizontal, 26)
-        .padding(.vertical, 24)
-        .frame(maxWidth: .infinity, minHeight: 230, alignment: .leading)
-        .background {
-            AppTheme.cardShape.fill(
-                LinearGradient(
-                    colors: [AppTheme.accent.opacity(0.10), AppTheme.accent.opacity(0.025), AppTheme.panel.opacity(0.55)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 80, weight: .ultraLight))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(AppTheme.accent)
+                .frame(width: 140, height: 140)
+                .background(AppTheme.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(AppTheme.accent.opacity(0.12), lineWidth: 0.8)
                 )
-            )
         }
-        .glassEffect(.regular, in: AppTheme.cardShape)
-        .overlay(AppTheme.cardShape.strokeBorder(AppTheme.accent.opacity(0.12), lineWidth: 0.8))
-    }
-}
-
-private struct OverviewStatusCard: View {
-    let title: String
-    let value: String
-    let detail: String
-    let symbol: String
-    let statusSymbol: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Image(systemName: symbol)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(AppTheme.accent)
-                Spacer()
-                Image(systemName: statusSymbol)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.tertiary)
-            }
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(detail)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(2)
-                    .textSelection(.enabled)
-            }
-        }
-        .padding(15)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(26)
         .background(AppTheme.panel, in: AppTheme.cardShape)
         .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
     }
 }
+
+typealias OverviewPage = OverviewView

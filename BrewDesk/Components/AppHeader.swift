@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct AppPageHeader: View {
+struct AppHeader: View {
     let section: AppSection
     @Binding var searchText: String
     let onOpenSettings: () -> Void
@@ -67,3 +67,5 @@ struct AppPageHeader: View {
         .background(.regularMaterial)
     }
 }
+
+typealias AppPageHeader = AppHeader

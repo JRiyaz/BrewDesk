@@ -1,24 +1,24 @@
 import SwiftUI
 
-struct MyApp: View {
+struct ContentView: View {
     @State private var selection: AppSection = .overview
     @State private var searchText = ""
     @StateObject private var homebrew = HomebrewStore()
-    
+
     var body: some View {
         NavigationSplitView {
             AppSidebar(selection: $selection)
         } detail: {
             VStack(spacing: 0) {
-                AppPageHeader(
+                AppHeader(
                     section: selection,
                     searchText: $searchText,
                     onOpenSettings: { selection = .settings }
                 )
-                
+
                 Divider()
                     .overlay(AppTheme.separator)
-                
+
                 ScrollView {
                     pageContent
                         .frame(maxWidth: 1020, alignment: .leading)
@@ -35,31 +35,33 @@ struct MyApp: View {
         .frame(minWidth: 980, minHeight: 680)
         .background(AppTheme.canvas)
     }
-    
+
     @ViewBuilder
     private var pageContent: some View {
         switch selection {
         case .overview:
-            OverviewPage(onNavigate: navigate, homebrew: homebrew)
+            OverviewView(onNavigate: navigate, homebrew: homebrew)
         case .installed:
-            InstalledPage(searchText: searchText, homebrew: homebrew)
+            InstalledView(searchText: searchText, homebrew: homebrew)
         case .discover:
-            DiscoverPage(searchText: searchText)
+            DiscoverView(searchText: searchText)
         case .updates:
-            UpdatesPage(homebrew: homebrew)
+            UpdatesView(homebrew: homebrew)
         case .cleaner:
-            CleanerPage()
+            CleanerView()
         case .ports:
-            PortsPage(searchText: searchText)
+            PortsView(searchText: searchText)
         case .commands:
-            CommandsPage(searchText: searchText)
+            CommandsView(searchText: searchText)
         case .settings:
-            SettingsPage(homebrew: homebrew)
+            SettingsView(homebrew: homebrew)
         }
     }
-    
+
     private func navigate(to section: AppSection) {
         searchText = ""
         selection = section
     }
 }
+
+typealias MyApp = ContentView

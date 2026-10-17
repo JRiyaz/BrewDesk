@@ -1,9 +1,8 @@
 import SwiftUI
 
-struct InstalledPage: View {
+struct InstalledView: View {
     let searchText: String
     @ObservedObject var homebrew: HomebrewStore
-    @AppStorage("customHomebrewPath") private var customHomebrewPath = ""
     @State private var selectedFilter: InstalledFilter = .all
     @State private var showDirectOnly = false
     @State private var refreshGeneration = 0
@@ -14,14 +13,10 @@ struct InstalledPage: View {
             let matchesDirect = !showDirectOnly || package.isDirect
             let matchesKind: Bool
             switch selectedFilter {
-            case .all:
-                matchesKind = true
-            case .formulae:
-                matchesKind = package.kind == .formula
-            case .casks, .guiApps:
-                matchesKind = package.kind == .cask
-            case .services:
-                matchesKind = false
+            case .all: matchesKind = true
+            case .formulae: matchesKind = package.kind == .formula
+            case .casks: matchesKind = package.kind == .cask
+            case .services: matchesKind = false
             }
             return matchesSearch && matchesDirect && matchesKind
         }
@@ -124,20 +119,16 @@ struct InstalledPage: View {
         }
         .task(id: refreshGeneration) {
             if selectedFilter == .services {
-                await homebrew.loadServices(customPath: customHomebrewPath)
+                await homebrew.loadServices()
             } else {
-                await homebrew.loadInstalledPackages(customPath: customHomebrewPath)
+                await homebrew.loadInstalledPackages()
             }
         }
         .onChange(of: selectedFilter) { newFilter in
             if newFilter == .services && !homebrew.hasLoadedServices {
-                Task {
-                    await homebrew.loadServices(customPath: customHomebrewPath)
-                }
+                Task { await homebrew.loadServices() }
             } else if newFilter != .services && !homebrew.hasLoadedPackages {
-                Task {
-                    await homebrew.loadInstalledPackages(customPath: customHomebrewPath)
-                }
+                Task { await homebrew.loadInstalledPackages() }
             }
         }
     }
@@ -147,12 +138,9 @@ struct InstalledPage: View {
             HStack {
                 Text("PACKAGE")
                 Spacer(minLength: 12)
-                Text("INSTALLATION")
-                    .frame(width: 100, alignment: .leading)
-                Text("TYPE")
-                    .frame(width: 80, alignment: .leading)
-                Text("VERSION")
-                    .frame(width: 140, alignment: .leading)
+                Text("INSTALLATION").frame(width: 100, alignment: .leading)
+                Text("TYPE").frame(width: 80, alignment: .leading)
+                Text("VERSION").frame(width: 140, alignment: .leading)
             }
             .font(.system(size: 9, weight: .bold))
             .tracking(0.7)
@@ -198,7 +186,6 @@ struct InstalledPage: View {
                             }
                             Spacer(minLength: 8)
 
-                            // Direct vs Dependency badge
                             HStack {
                                 if package.isDirect {
                                     Text("Direct")
@@ -253,10 +240,8 @@ struct InstalledPage: View {
             HStack {
                 Text("SERVICE")
                 Spacer(minLength: 12)
-                Text("STATUS")
-                    .frame(width: 100, alignment: .leading)
-                Text("ACTION")
-                    .frame(width: 90, alignment: .trailing)
+                Text("STATUS").frame(width: 100, alignment: .leading)
+                Text("ACTION").frame(width: 90, alignment: .trailing)
             }
             .font(.system(size: 9, weight: .bold))
             .tracking(0.7)
@@ -310,7 +295,6 @@ struct InstalledPage: View {
 
                             Spacer(minLength: 8)
 
-                            // Status pill
                             HStack(spacing: 6) {
                                 Circle()
                                     .fill(service.status.isRunning ? AppTheme.success : (service.status == .error ? AppTheme.warning : Color.secondary.opacity(0.4)))
@@ -324,16 +308,12 @@ struct InstalledPage: View {
                             .background(AppTheme.subtleFill, in: Capsule())
                             .frame(width: 100, alignment: .leading)
 
-                            // Action button: Stop if already running, else Start
                             HStack {
                                 if homebrew.mutatingService == service.name {
-                                    ProgressView()
-                                        .controlSize(.small)
+                                    ProgressView().controlSize(.small)
                                 } else if service.status.isRunning {
                                     Button {
-                                        Task {
-                                            await homebrew.stopService(name: service.name, customPath: customHomebrewPath)
-                                        }
+                                        Task { await homebrew.stopService(name: service.name) }
                                     } label: {
                                         Label("Stop", systemImage: "stop.fill")
                                             .font(.system(size: 10, weight: .medium))
@@ -343,9 +323,7 @@ struct InstalledPage: View {
                                     .controlSize(.small)
                                 } else {
                                     Button {
-                                        Task {
-                                            await homebrew.startService(name: service.name, customPath: customHomebrewPath)
-                                        }
+                                        Task { await homebrew.startService(name: service.name) }
                                     } label: {
                                         Label("Start", systemImage: "play.fill")
                                             .font(.system(size: 10, weight: .medium))
@@ -360,8 +338,7 @@ struct InstalledPage: View {
                         .padding(.vertical, 12)
 
                         if service.id != filteredServices.last?.id {
-                            Divider().overlay(AppTheme.separator.opacity(0.7))
-                                .padding(.leading, 18)
+                            Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                         }
                     }
                 }
@@ -399,3 +376,4 @@ private enum InstalledFilter: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+typealias InstalledPage = InstalledView

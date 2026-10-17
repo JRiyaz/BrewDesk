@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SettingsPage: View {
+struct SettingsView: View {
     @ObservedObject var homebrew: HomebrewStore
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
     @AppStorage("customHomebrewPath") private var customHomebrewPath = ""
@@ -154,3 +154,5 @@ private struct SettingsSectionHeading: View {
         }
     }
 }
+
+typealias SettingsPage = SettingsView

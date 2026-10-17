@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-/// UI-facing state for explicit, finite Homebrew reads. This store creates no timers or observers.
+/// UI-facing state for Homebrew reads and actions.
 @MainActor
 final class HomebrewStore: ObservableObject {
     @Published private(set) var installation: HomebrewInstallation?
@@ -29,6 +29,10 @@ final class HomebrewStore: ObservableObject {
 
     private let client = HomebrewClient()
 
+    var configuredCustomPath: String {
+        UserDefaults.standard.string(forKey: "customHomebrewPath") ?? ""
+    }
+
     var formulaCount: Int { packages.filter { $0.kind == .formula }.count }
     var caskCount: Int { packages.filter { $0.kind == .cask }.count }
     var directCount: Int { packages.filter { $0.isDirect }.count }
@@ -38,19 +42,19 @@ final class HomebrewStore: ObservableObject {
     var hasLoadedServices: Bool { servicesLoadedAt != nil }
     var hasCheckedUpdates: Bool { updatesCheckedAt != nil }
 
-    func checkInstallation(customPath: String) async {
+    func checkInstallation(customPath: String? = nil) async {
         guard !isCheckingInstallation else { return }
         isCheckingInstallation = true
         installationError = nil
         defer { isCheckingInstallation = false }
 
+        let path = customPath ?? configuredCustomPath
         do {
-            let detected = try await client.detectInstallation(customPath: customPath)
+            let detected = try await client.detectInstallation(customPath: path)
             try Task.checkCancellation()
             installation = detected
             installationCheckedAt = Date()
         } catch is CancellationError {
-            // Cancellation is expected when the view or application is closing.
         } catch {
             installation = nil
             installationError = error.localizedDescription
@@ -58,18 +62,17 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    private func ensureInstallation(customPath: String) async throws -> HomebrewInstallation {
-        if let installation {
-            return installation
-        }
-        let detected = try await client.detectInstallation(customPath: customPath)
+    private func ensureInstallation(customPath: String? = nil) async throws -> HomebrewInstallation {
+        if let installation { return installation }
+        let path = customPath ?? configuredCustomPath
+        let detected = try await client.detectInstallation(customPath: path)
         try Task.checkCancellation()
         self.installation = detected
         self.installationCheckedAt = Date()
         return detected
     }
 
-    func loadInstalledPackages(customPath: String) async {
+    func loadInstalledPackages(customPath: String? = nil) async {
         guard !isLoadingPackages else { return }
         isLoadingPackages = true
         packagesError = nil
@@ -96,13 +99,12 @@ final class HomebrewStore: ObservableObject {
             packagesLoadedAt = Date()
             packagesError = nil
         } catch is CancellationError {
-            // Preserve the last successful package list when a refresh is cancelled.
         } catch {
             packagesError = error.localizedDescription
         }
     }
 
-    func loadServices(customPath: String) async {
+    func loadServices(customPath: String? = nil) async {
         guard !isLoadingServices else { return }
         isLoadingServices = true
         servicesError = nil
@@ -130,7 +132,7 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    func startService(name: String, customPath: String) async {
+    func startService(name: String, customPath: String? = nil) async {
         guard mutatingService == nil else { return }
         mutatingService = name
         servicesError = nil
@@ -139,7 +141,6 @@ final class HomebrewStore: ObservableObject {
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.startService(name: name, using: install)
-            // Refresh service list
             let updatedServices = try await client.listServices(using: install)
             services = updatedServices
             servicesLoadedAt = Date()
@@ -149,7 +150,7 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    func stopService(name: String, customPath: String) async {
+    func stopService(name: String, customPath: String? = nil) async {
         guard mutatingService == nil else { return }
         mutatingService = name
         servicesError = nil
@@ -158,7 +159,6 @@ final class HomebrewStore: ObservableObject {
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.stopService(name: name, using: install)
-            // Refresh service list
             let updatedServices = try await client.listServices(using: install)
             services = updatedServices
             servicesLoadedAt = Date()
@@ -168,7 +168,7 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    func checkUpdates(customPath: String) async {
+    func checkUpdates(customPath: String? = nil) async {
         guard !isCheckingUpdates else { return }
         isCheckingUpdates = true
         updatesError = nil
@@ -196,7 +196,7 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    func upgradePackage(package: HomebrewOutdatedPackage, customPath: String) async {
+    func upgradePackage(package: HomebrewOutdatedPackage, customPath: String? = nil) async {
         guard updatingPackage == nil && !isUpgradingAll else { return }
         updatingPackage = package.name
         updatesError = nil
@@ -205,9 +205,7 @@ final class HomebrewStore: ObservableObject {
         do {
             let install = try await ensureInstallation(customPath: customPath)
             try await client.upgradePackage(name: package.name, kind: package.kind, using: install)
-            // Remove from outdated list
             outdatedPackages.removeAll { $0.id == package.id }
-            // Refresh outdated in background
             if let refreshed = try? await client.listOutdatedPackages(using: install) {
                 outdatedPackages = refreshed
             }
@@ -217,7 +215,7 @@ final class HomebrewStore: ObservableObject {
         }
     }
 
-    func upgradeAll(customPath: String) async {
+    func upgradeAll(customPath: String? = nil) async {
         guard !isUpgradingAll && updatingPackage == nil else { return }
         isUpgradingAll = true
         updatesError = nil
