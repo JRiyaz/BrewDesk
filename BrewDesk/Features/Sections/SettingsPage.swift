@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct SettingsPage: View {
+    @ObservedObject var homebrew: HomebrewStore
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
     @AppStorage("customHomebrewPath") private var customHomebrewPath = ""
     @AppStorage("confirmMutatingActions") private var confirmMutatingActions = true
+    @State private var validationGeneration = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -49,9 +51,34 @@ struct SettingsPage: View {
                     TextField("/opt/homebrew/bin/brew", text: $customHomebrewPath)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 11, design: .monospaced))
-                    Text("Saved locally. Path detection and validation will be connected in a later implementation phase.")
+                    Text("Leave blank to check standard locations and the app’s PATH. Use the full executable path if Homebrew is installed elsewhere.")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
+
+                    HStack(spacing: 10) {
+                        Button {
+                            validationGeneration += 1
+                        } label: {
+                            Label(homebrew.isCheckingInstallation ? "Checking…" : "Validate Path", systemImage: "checkmark.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(homebrew.isCheckingInstallation)
+
+                        if let installation = homebrew.installation {
+                            Text("Found · \(installation.version) · \(installation.prefix)")
+                                .font(.system(size: 10))
+                                .foregroundStyle(AppTheme.success)
+                                .lineLimit(1)
+                                .textSelection(.enabled)
+                        } else if let error = homebrew.installationError {
+                            Text(error)
+                                .font(.system(size: 10))
+                                .foregroundStyle(AppTheme.warning)
+                                .lineLimit(8)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .textSelection(.enabled)
+                        }
+                    }
                 }
             }
             .padding(19)
@@ -65,7 +92,7 @@ struct SettingsPage: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Confirm system-changing actions")
                             .font(.system(size: 12, weight: .medium))
-                        Text("Preference is saved for the planned Homebrew workflows; this preview performs no system changes.")
+                        Text("BrewDesk will show the command and ask for confirmation before a system-changing operation.")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
@@ -78,8 +105,8 @@ struct SettingsPage: View {
 
             NotePanel(
                 symbol: "moon.zzz",
-                title: "Quiet by default",
-                message: "Closing the last window quits BrewDesk. This app shell registers no login item, launch agent, daemon, timer, or recurring refresh loop.",
+                title: "Foreground utility",
+                message: "Closing the last window quits BrewDesk. System checks run only when you open a feature or request a refresh; no resident agent or polling loop is used.",
                 tint: AppTheme.success
             )
 
@@ -87,13 +114,17 @@ struct SettingsPage: View {
                 Text("BrewDesk")
                     .font(.system(size: 10, weight: .semibold))
                 Text("•")
-                Text("Design preview · Version 1.0")
+                Text("Early access · Version 1.0")
                 Spacer()
                 Text("Preferences stored on this Mac")
             }
             .font(.system(size: 10))
             .foregroundStyle(.tertiary)
             .padding(.horizontal, 2)
+        }
+        .task(id: validationGeneration) {
+            guard validationGeneration > 0 else { return }
+            await homebrew.checkInstallation(customPath: customHomebrewPath)
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct MyApp: View {
     @State private var selection: AppSection = .overview
     @State private var searchText = ""
+    @StateObject private var homebrew = HomebrewStore()
     
     var body: some View {
         NavigationSplitView {
@@ -39,13 +40,13 @@ struct MyApp: View {
     private var pageContent: some View {
         switch selection {
         case .overview:
-            OverviewPage(onNavigate: navigate)
+            OverviewPage(onNavigate: navigate, homebrew: homebrew)
         case .installed:
-            InstalledPage(searchText: searchText)
+            InstalledPage(searchText: searchText, homebrew: homebrew)
         case .discover:
             DiscoverPage(searchText: searchText)
         case .updates:
-            UpdatesPage()
+            UpdatesPage(homebrew: homebrew)
         case .cleaner:
             CleanerPage()
         case .ports:
@@ -53,7 +54,7 @@ struct MyApp: View {
         case .commands:
             CommandsPage(searchText: searchText)
         case .settings:
-            SettingsPage()
+            SettingsPage(homebrew: homebrew)
         }
     }
     

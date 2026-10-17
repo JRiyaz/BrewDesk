@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct AppSidebar: View {
@@ -10,7 +11,7 @@ struct AppSidebar: View {
                     .resizable()
                     .interpolation(.high)
                     .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("BrewDesk")
@@ -49,7 +50,6 @@ struct AppSidebar: View {
                 SidebarItem(section: .settings, isSelected: selection == .settings) {
                     selection = .settings
                 }
-                .padding(.horizontal, 10)
             }
         }
         .padding(.horizontal, 12)
