@@ -4,7 +4,7 @@ struct InstalledView: View {
     let searchText: String
     @ObservedObject var homebrew: HomebrewStore
     @Binding var selectedFilter: InstalledFilter
-    @State private var showDirectOnly = false
+    @State private var showDirectOnly = true
     @State private var refreshGeneration = 0
     @State private var hasCopiedCommand = false
     @State private var copiedServiceID: String?

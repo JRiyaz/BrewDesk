@@ -71,6 +71,23 @@ struct HomebrewOutdatedPackage: Identifiable, Hashable, Sendable {
     let currentVersion: String
     let kind: HomebrewPackageKind
     let isPinned: Bool
+    let isDirect: Bool
+    
+    init(
+        name: String,
+        installedVersion: String,
+        currentVersion: String,
+        kind: HomebrewPackageKind,
+        isPinned: Bool,
+        isDirect: Bool = true
+    ) {
+        self.name = name
+        self.installedVersion = installedVersion
+        self.currentVersion = currentVersion
+        self.kind = kind
+        self.isPinned = isPinned
+        self.isDirect = isDirect
+    }
     
     var id: String { "\(kind.rawValue):\(name)" }
     

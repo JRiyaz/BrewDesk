@@ -207,11 +207,18 @@ struct HomebrewClient {
     
     func listOutdatedPackages(using installation: HomebrewInstallation) async throws -> [HomebrewOutdatedPackage] {
         let executableURL = URL(fileURLWithPath: installation.executablePath)
-        if let jsonOutput = try? await checkedOutput(
+        
+        async let leavesTask = (try? await listLeaves(executableURL: executableURL)) ?? []
+        async let jsonTask = try? await checkedOutput(
             executableURL: executableURL,
             arguments: ["outdated", "--json=v2"],
             displayCommand: "brew outdated --json=v2"
-        ), let packages = parseOutdatedJSON(jsonOutput) {
+        )
+        
+        let leaves = await leavesTask
+        let leavesSet = Set(leaves)
+        
+        if let jsonOutput = await jsonTask, let packages = parseOutdatedJSON(jsonOutput, leavesSet: leavesSet) {
             return packages
         }
         
@@ -220,10 +227,10 @@ struct HomebrewClient {
             arguments: ["outdated"],
             displayCommand: "brew outdated"
         )
-        return parseOutdatedPlain(plainOutput)
+        return parseOutdatedPlain(plainOutput, leavesSet: leavesSet)
     }
     
-    private func parseOutdatedJSON(_ jsonString: String) -> [HomebrewOutdatedPackage]? {
+    private func parseOutdatedJSON(_ jsonString: String, leavesSet: Set<String>) -> [HomebrewOutdatedPackage]? {
         guard let data = jsonString.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
@@ -242,12 +249,14 @@ struct HomebrewClient {
                     installed = "unknown"
                 }
                 let pinned = (item["pinned"] as? Bool) ?? false
+                let isDirect = leavesSet.isEmpty ? true : (leavesSet.contains(name) || leavesSet.contains(name.components(separatedBy: "/").last ?? name))
                 results.append(HomebrewOutdatedPackage(
                     name: name,
                     installedVersion: installed,
                     currentVersion: current,
                     kind: .formula,
-                    isPinned: pinned
+                    isPinned: pinned,
+                    isDirect: isDirect
                 ))
             }
         }
@@ -269,7 +278,8 @@ struct HomebrewClient {
                     installedVersion: installed,
                     currentVersion: current,
                     kind: .cask,
-                    isPinned: false
+                    isPinned: false,
+                    isDirect: true
                 ))
             }
         }
@@ -277,7 +287,7 @@ struct HomebrewClient {
         return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
     
-    private func parseOutdatedPlain(_ output: String) -> [HomebrewOutdatedPackage] {
+    private func parseOutdatedPlain(_ output: String, leavesSet: Set<String>) -> [HomebrewOutdatedPackage] {
         return output
             .split(whereSeparator: \.isNewline)
             .compactMap { line in
@@ -292,21 +302,25 @@ struct HomebrewClient {
                     let oldVer = nameAndOld.count > 1
                     ? nameAndOld[1].replacingOccurrences(of: ")", with: "").trimmingCharacters(in: .whitespaces)
                     : "installed"
+                    let isDirect = leavesSet.isEmpty ? true : (leavesSet.contains(name) || leavesSet.contains(name.components(separatedBy: "/").last ?? name))
                     return HomebrewOutdatedPackage(
                         name: name,
                         installedVersion: oldVer,
                         currentVersion: newVer,
                         kind: .formula,
-                        isPinned: false
+                        isPinned: false,
+                        isDirect: isDirect
                     )
                 } else {
                     let name = trimmed.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? trimmed
+                    let isDirect = leavesSet.isEmpty ? true : (leavesSet.contains(name) || leavesSet.contains(name.components(separatedBy: "/").last ?? name))
                     return HomebrewOutdatedPackage(
                         name: name,
                         installedVersion: "Installed",
                         currentVersion: "New version available",
                         kind: .formula,
-                        isPinned: false
+                        isPinned: false,
+                        isDirect: isDirect
                     )
                 }
             }

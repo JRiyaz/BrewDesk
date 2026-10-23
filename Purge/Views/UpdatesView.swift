@@ -2,15 +2,26 @@ import SwiftUI
 
 struct UpdatesView: View {
     @ObservedObject var homebrew: HomebrewStore
+    @State private var showDirectOnly = true
     @State private var refreshGeneration = 0
     @State private var copiedPackageID: String?
     
+    private var filteredPackages: [HomebrewOutdatedPackage] {
+        homebrew.outdatedPackages.filter { package in
+            !showDirectOnly || package.isDirect
+        }
+    }
+    
     private var formulaOutdatedCount: Int {
+        filteredPackages.filter { $0.kind == .formula }.count
+    }
+    
+    private var totalFormulaOutdatedCount: Int {
         homebrew.outdatedPackages.filter { $0.kind == .formula }.count
     }
     
     private var caskOutdatedCount: Int {
-        homebrew.outdatedPackages.filter { $0.kind == .cask }.count
+        filteredPackages.filter { $0.kind == .cask }.count
     }
     
     private var lastCheckedFormatted: String {
@@ -31,7 +42,11 @@ struct UpdatesView: View {
             HStack(spacing: 12) {
                 MetricCard(
                     title: "Formulae",
-                    value: homebrew.hasCheckedUpdates ? (formulaOutdatedCount == 0 ? "Up to date" : "\(formulaOutdatedCount) available") : "Not checked",
+                    value: homebrew.hasCheckedUpdates
+                        ? (formulaOutdatedCount == 0
+                            ? (showDirectOnly && totalFormulaOutdatedCount > 0 ? "Up to date (direct)" : "Up to date")
+                            : "\(formulaOutdatedCount) available")
+                        : "Not checked",
                     symbol: "terminal"
                 )
                 MetricCard(
@@ -47,6 +62,20 @@ struct UpdatesView: View {
             }
             
             HStack(spacing: 12) {
+                Button {
+                    showDirectOnly.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showDirectOnly ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                            .font(.system(size: 12))
+                        Text(showDirectOnly ? "Direct only" : "All packages")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                }
+                .buttonStyle(.bordered)
+                .tint(showDirectOnly ? AppTheme.accent : nil)
+                .help(Text(verbatim: showDirectOnly ? "Showing direct/top-level apps only. Click to view all packages including dependencies." : "Click to view direct apps instead of transitive dependencies."))
+                
                 if homebrew.isCheckingUpdates {
                     ProgressView().controlSize(.small)
                     Text("Checking for updates…")
@@ -55,8 +84,16 @@ struct UpdatesView: View {
                 } else if homebrew.hasCheckedUpdates {
                     if homebrew.outdatedPackages.isEmpty {
                         StatusPill(title: "ALL CURRENT", symbol: "checkmark.circle.fill", tint: AppTheme.success)
+                    } else if filteredPackages.isEmpty {
+                        StatusPill(title: "NO DIRECT UPDATES", symbol: "checkmark.circle.fill", tint: AppTheme.success)
                     } else {
-                        StatusPill(title: "\(homebrew.outdatedPackages.count) UPDATES", symbol: "arrow.triangle.2.circlepath", tint: AppTheme.warning)
+                        StatusPill(
+                            title: showDirectOnly && filteredPackages.count != homebrew.outdatedPackages.count
+                                ? "\(filteredPackages.count) DIRECT UPDATES"
+                                : "\(filteredPackages.count) UPDATES",
+                            symbol: "arrow.triangle.2.circlepath",
+                            tint: AppTheme.warning
+                        )
                     }
                 }
                 
@@ -70,15 +107,15 @@ struct UpdatesView: View {
                 .buttonStyle(.bordered)
                 .disabled(homebrew.isCheckingUpdates || homebrew.isUpgradingAll || homebrew.updatingPackage != nil)
                 
-                if !homebrew.outdatedPackages.isEmpty {
+                if !filteredPackages.isEmpty {
                     Button {
-                        Task { await homebrew.upgradeAll() }
+                        Task { await homebrew.upgradePackages(filteredPackages) }
                     } label: {
                         HStack(spacing: 6) {
                             if homebrew.isUpgradingAll {
                                 ProgressView().controlSize(.small)
                             }
-                            Label(homebrew.isUpgradingAll ? "Updating all…" : "Update all (\(homebrew.outdatedPackages.count))", systemImage: "arrow.up.circle.fill")
+                            Label(homebrew.isUpgradingAll ? "Updating all…" : "Update all (\(filteredPackages.count))", systemImage: "arrow.up.circle.fill")
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -99,10 +136,11 @@ struct UpdatesView: View {
                 HStack {
                     Text("PACKAGE")
                     Spacer(minLength: 12)
-                    Text("TYPE").frame(width: 80, alignment: .leading)
-                    Text("CURRENT").frame(width: 110, alignment: .leading)
-                    Text("LATEST").frame(width: 110, alignment: .leading)
-                    Text("COMMAND").frame(width: 80, alignment: .center)
+                    Text("INSTALLATION").frame(width: 90, alignment: .leading)
+                    Text("TYPE").frame(width: 75, alignment: .leading)
+                    Text("CURRENT").frame(width: 105, alignment: .leading)
+                    Text("LATEST").frame(width: 105, alignment: .leading)
+                    Text("COMMAND").frame(width: 75, alignment: .center)
                     Text("ACTION").frame(width: 85, alignment: .trailing)
                 }
                 .font(.system(size: 9, weight: .bold))
@@ -131,9 +169,15 @@ struct UpdatesView: View {
                         title: "All packages are up to date",
                         message: "No newer versions were reported for your installed formulae and casks."
                     )
+                } else if filteredPackages.isEmpty {
+                    EmptyStateView(
+                        symbol: "checkmark.seal",
+                        title: "All direct packages are up to date",
+                        message: "No newer versions were reported for direct packages. Click 'Direct only' to switch to 'All packages' and see \(homebrew.outdatedPackages.count) dependency update\(homebrew.outdatedPackages.count == 1 ? "" : "s")."
+                    )
                 } else {
                     LazyVStack(spacing: 0) {
-                        ForEach(homebrew.outdatedPackages) { package in
+                        ForEach(filteredPackages) { package in
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(package.name)
@@ -148,20 +192,39 @@ struct UpdatesView: View {
                                 
                                 Spacer(minLength: 8)
                                 
+                                HStack {
+                                    if package.isDirect {
+                                        Text("Direct")
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundStyle(AppTheme.accent)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(AppTheme.accent.opacity(0.12), in: Capsule())
+                                    } else {
+                                        Text("Dependency")
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.secondary)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(AppTheme.subtleFill, in: Capsule())
+                                    }
+                                }
+                                .frame(width: 90, alignment: .leading)
+                                
                                 Text(package.kind.title)
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 5)
                                     .background(AppTheme.subtleFill, in: Capsule())
-                                    .frame(width: 80, alignment: .leading)
+                                    .frame(width: 75, alignment: .leading)
                                 
                                 Text(package.installedVersion)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                    .frame(width: 110, alignment: .leading)
+                                    .frame(width: 105, alignment: .leading)
                                 
                                 HStack(spacing: 4) {
                                     Image(systemName: "arrow.right")
@@ -173,7 +236,7 @@ struct UpdatesView: View {
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                 }
-                                .frame(width: 110, alignment: .leading)
+                                .frame(width: 105, alignment: .leading)
                                 
                                 Button {
                                     if ClipboardService.copy(package.upgradeCommand) {
@@ -197,7 +260,7 @@ struct UpdatesView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .help(Text(verbatim: copiedPackageID == package.id ? "Copied!" : "Copy update command: \(package.upgradeCommand)"))
-                                .frame(width: 80, alignment: .center)
+                                .frame(width: 75, alignment: .center)
                                 
                                 HStack {
                                     if homebrew.updatingPackage == package.name {
@@ -219,7 +282,7 @@ struct UpdatesView: View {
                             .padding(.horizontal, 18)
                             .padding(.vertical, 12)
                             
-                            if package.id != homebrew.outdatedPackages.last?.id {
+                            if package.id != filteredPackages.last?.id {
                                 Divider().overlay(AppTheme.separator.opacity(0.7)).padding(.leading, 18)
                             }
                         }

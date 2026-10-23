@@ -42,6 +42,8 @@ final class HomebrewStore: ObservableObject {
     var caskCount: Int { packages.filter { $0.kind == .cask }.count }
     var directCount: Int { packages.filter { $0.isDirect }.count }
     var transitiveCount: Int { packages.filter { !$0.isDirect }.count }
+    var directOutdatedCount: Int { outdatedPackages.filter { $0.isDirect }.count }
+    var transitiveOutdatedCount: Int { outdatedPackages.filter { !$0.isDirect }.count }
     var runningServicesCount: Int { services.filter { $0.status.isRunning }.count }
     var hasLoadedPackages: Bool { packagesLoadedAt != nil }
     var hasLoadedServices: Bool { servicesLoadedAt != nil }
@@ -220,16 +222,23 @@ final class HomebrewStore: ObservableObject {
         }
     }
     
-    func upgradeAll(customPath: String? = nil) async {
+    func upgradePackages(_ packages: [HomebrewOutdatedPackage], customPath: String? = nil) async {
         guard !isUpgradingAll && updatingPackage == nil else { return }
+        guard !packages.isEmpty else { return }
         isUpgradingAll = true
         updatesError = nil
         defer { isUpgradingAll = false }
         
         do {
             let install = try await ensureInstallation(customPath: customPath)
-            try await client.upgradeAll(using: install)
-            outdatedPackages = []
+            if packages.count >= outdatedPackages.count {
+                try await client.upgradeAll(using: install)
+            } else {
+                for pkg in packages {
+                    try await client.upgradePackage(name: pkg.name, kind: pkg.kind, using: install)
+                }
+            }
+            outdatedPackages.removeAll { pkg in packages.contains(where: { $0.id == pkg.id }) }
             if let refreshed = try? await client.listOutdatedPackages(using: install) {
                 outdatedPackages = refreshed
             }
@@ -237,6 +246,10 @@ final class HomebrewStore: ObservableObject {
         } catch {
             updatesError = error.localizedDescription
         }
+    }
+    
+    func upgradeAll(customPath: String? = nil) async {
+        await upgradePackages(outdatedPackages, customPath: customPath)
     }
     
     func searchCatalogue(query: String, kind: HomebrewPackageKind, customPath: String? = nil) async {

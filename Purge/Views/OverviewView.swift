@@ -104,6 +104,24 @@ struct OverviewView: View {
         return "clock"
     }
     
+    private var appIconView: some View {
+        Group {
+            if let image = NSImage(named: "AppIconImage") {
+                Image(nsImage: image)
+                    .resizable()
+            } else if let icon = NSApp.applicationIconImage {
+                Image(nsImage: icon)
+                    .resizable()
+            } else {
+                Image("AppIconImage")
+                    .resizable()
+            }
+        }
+        .aspectRatio(contentMode: .fit)
+        .frame(width: 130, height: 130)
+        .shadow(color: Color.black.opacity(0.28), radius: 14, x: 0, y: 7)
+    }
+    
     private var welcomeCard: some View {
         HStack(alignment: .center, spacing: 22) {
             VStack(alignment: .leading, spacing: 12) {
@@ -127,16 +145,7 @@ struct OverviewView: View {
             
             Spacer(minLength: 0)
             
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: 80, weight: .ultraLight))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(AppTheme.accent)
-                .frame(width: 140, height: 140)
-                .background(AppTheme.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(AppTheme.accent.opacity(0.12), lineWidth: 0.8)
-                )
+            appIconView
         }
         .padding(26)
         .background(AppTheme.panel, in: AppTheme.cardShape)

@@ -22,6 +22,7 @@ Purge is a modern, native macOS utility for managing Homebrew packages, backgrou
   - 1-click package installation with progress indicator and terminal copy command.
 - **Updates:**
   - Real-time check for outdated formulae and casks via Homebrew API.
+  - Toggle between **Direct only** (top-level leaf packages) and all packages (including transitive dependencies).
   - Per-package version comparison (Installed vs. Latest).
   - Upgrade individual packages or **Upgrade all** at once.
   - Copy upgrade commands to clipboard.
