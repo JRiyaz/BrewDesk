@@ -55,7 +55,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .commands: "Find and copy common Homebrew commands."
         case .ports: "See what is listening on your Mac."
         case .systemCleaner: "Reclaim disk space from caches, logs, and development stores."
-        case .settings: "Make BrewDesk feel right for you."
+        case .settings: "Make Purge feel right for you."
         }
     }
     

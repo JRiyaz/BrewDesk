@@ -323,7 +323,7 @@ struct CleanerView: View {
                     EmptyStateView(
                         symbol: "hourglass",
                         title: "Scanning dependency tree",
-                        message: "BrewDesk is running `brew autoremove -n` to detect unneeded packages."
+                        message: "Purge is running `brew autoremove -n` to detect unneeded packages."
                     )
                 } else if cleaner.autoremoveItems.isEmpty {
                     EmptyStateView(
@@ -340,7 +340,7 @@ struct CleanerView: View {
                     EmptyStateView(
                         symbol: "hourglass",
                         title: "Scanning Homebrew cache",
-                        message: "BrewDesk is running `brew cleanup -n` to find outdated downloads and lockfiles."
+                        message: "Purge is running `brew cleanup -n` to find outdated downloads and lockfiles."
                     )
                 } else if cleaner.cleanupItems.isEmpty {
                     EmptyStateView(
@@ -359,7 +359,7 @@ struct CleanerView: View {
                     EmptyStateView(
                         symbol: "hourglass",
                         title: "Analyzing bottle cache",
-                        message: "BrewDesk is enumerating cached downloads in ~/Library/Caches/Homebrew."
+                        message: "Purge is enumerating cached downloads in ~/Library/Caches/Homebrew."
                     )
                 } else if cleaner.cacheSizeBytes == 0 {
                     EmptyStateView(
@@ -511,11 +511,11 @@ struct CleanerView: View {
     private var confirmMessage: String {
         switch selectedSection {
         case .autoremove:
-            return "BrewDesk will run `brew autoremove` to uninstall orphaned formula dependencies that are no longer required by any installed software."
+            return "Purge will run `brew autoremove` to uninstall orphaned formula dependencies that are no longer required by any installed software."
         case .clean:
-            return "BrewDesk will run `brew cleanup` to safely remove superseded package downloads, old versions, and stale lockfiles. Your installed software will remain intact."
+            return "Purge will run `brew cleanup` to safely remove superseded package downloads, old versions, and stale lockfiles. Your installed software will remain intact."
         case .purgeCache:
-            return "BrewDesk will run `brew cleanup --prune=all` to delete all bottle downloads and cached archives in ~/Library/Caches/Homebrew (\(cleaner.cacheFormattedSize)). Homebrew will re-download files if needed in the future."
+            return "Purge will run `brew cleanup --prune=all` to delete all bottle downloads and cached archives in ~/Library/Caches/Homebrew (\(cleaner.cacheFormattedSize)). Homebrew will re-download files if needed in the future."
         }
     }
     

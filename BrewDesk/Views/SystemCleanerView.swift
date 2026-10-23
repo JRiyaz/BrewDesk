@@ -168,7 +168,7 @@ struct SystemCleanerView: View {
                 categoryToClean = nil
             }
         } message: { target in
-            Text("BrewDesk will remove temporary files in \(target.path). Applications will recreate any required cache files automatically.")
+            Text("Purge will remove temporary files in \(target.path). Applications will recreate any required cache files automatically.")
         }
     }
     

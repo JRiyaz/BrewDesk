@@ -11,7 +11,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 22) {
             PageIntro(
                 eyebrow: "PREFERENCES",
-                title: "Make BrewDesk yours",
+                title: "Make Purge yours",
                 description: "A few thoughtful preferences. No account, analytics, or always-on helper."
             )
             
@@ -93,7 +93,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Confirm system-changing actions")
                             .font(.system(size: 12, weight: .medium))
-                        Text("BrewDesk will show the command and ask for confirmation before a system-changing operation.")
+                        Text("Purge will show the command and ask for confirmation before a system-changing operation.")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
@@ -107,12 +107,12 @@ struct SettingsView: View {
             NotePanel(
                 symbol: "moon.zzz",
                 title: "Foreground utility",
-                message: "Closing the last window quits BrewDesk. System checks run only when you open a feature or request a refresh; no resident agent or polling loop is used.",
+                message: "Closing the last window quits Purge. System checks run only when you open a feature or request a refresh; no resident agent or polling loop is used.",
                 tint: AppTheme.success
             )
             
             HStack {
-                Text("BrewDesk")
+                Text("Purge")
                     .font(.system(size: 10, weight: .semibold))
                 Text("•")
                 Text("Early access · Version 1.0")

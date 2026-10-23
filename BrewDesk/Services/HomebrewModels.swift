@@ -106,7 +106,7 @@ enum HomebrewClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .detectionFailed(let details):
-            return "BrewDesk could not validate Homebrew.\n\(details)"
+            return "Purge could not validate Homebrew.\n\(details)"
         case .invalidCustomPath(let path):
             return "The custom Homebrew path is not an executable file: \(path)"
         case .commandFailed(let command, let reason):

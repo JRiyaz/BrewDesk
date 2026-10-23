@@ -7,7 +7,7 @@ struct MyApp: App {
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
     
     var body: some Scene {
-        WindowGroup("BrewDesk") {
+        WindowGroup("Purge") {
             ContentView()
                 .preferredColorScheme(
                     (AppAppearance(rawValue: appearanceMode) ?? .system).colorScheme
@@ -28,4 +28,4 @@ final class AppLifecycle: NSObject, NSApplicationDelegate {
     }
 }
 
-typealias BrewDeskApp = MyApp
+typealias PurgeApp = MyApp

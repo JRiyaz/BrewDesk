@@ -25,7 +25,7 @@ struct UpdatesView: View {
             PageIntro(
                 eyebrow: "MAINTENANCE",
                 title: "Stay up to date",
-                description: "Review outdated formulae and casks before choosing what to update. BrewDesk runs `brew outdated` on demand."
+                description: "Review outdated formulae and casks before choosing what to update. Purge runs `brew outdated` on demand."
             )
             
             HStack(spacing: 12) {
@@ -117,7 +117,7 @@ struct UpdatesView: View {
                     EmptyStateView(
                         symbol: "hourglass",
                         title: "Checking for updates",
-                        message: "BrewDesk is querying Homebrew to check for available updates."
+                        message: "Purge is querying Homebrew to check for available updates."
                     )
                 } else if !homebrew.hasCheckedUpdates && homebrew.updatesError == nil {
                     EmptyStateView(

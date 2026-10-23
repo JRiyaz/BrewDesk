@@ -1,6 +1,6 @@
-# BrewDesk
+# Purge
 
-BrewDesk is a modern, native macOS utility for managing Homebrew packages, background services, listening network ports, and system storage hygiene. Built with Swift and SwiftUI, it delivers a fast, transparent, and local-first Mac developer experience with native glass styling.
+Purge is a modern, native macOS utility for managing Homebrew packages, background services, listening network ports, and system storage hygiene. Built with Swift and SwiftUI, it delivers a fast, transparent, and local-first Mac developer experience with native glass styling.
 
 ---
 
@@ -104,7 +104,7 @@ BrewDesk/
 
 ### Building in Xcode
 1. Open `BrewDesk.xcodeproj` in Xcode.
-2. Select the `BrewDesk` scheme and target `My Mac`.
+2. Select the `Purge` scheme and target `My Mac`.
 3. Press `Cmd + R` to build and run.
 
 ---

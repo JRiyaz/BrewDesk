@@ -46,7 +46,7 @@ struct CommandsView: View {
             PageIntro(
                 eyebrow: "REFERENCE",
                 title: "The right command, clearly explained",
-                description: "A curated Homebrew command catalogue. Copying only copies text; BrewDesk never executes commands from this screen."
+                description: "A curated Homebrew command catalogue. Copying only copies text; Purge never executes commands from this screen."
             )
             
             NotePanel(

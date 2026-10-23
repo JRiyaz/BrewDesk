@@ -60,7 +60,7 @@ struct InstalledView: View {
                 title: selectedFilter == .services ? "Background services" : "Everything you have installed",
                 description: selectedFilter == .services
                 ? "Manage background services configured through Homebrew. Start and stop services with a single click."
-                : "Browse locally installed Homebrew formulae and casks. BrewDesk reads this information only when you open this screen or refresh it."
+                : "Browse locally installed Homebrew formulae and casks. Purge reads this information only when you open this screen or refresh it."
             )
             
             HStack(spacing: 12) {
@@ -188,13 +188,13 @@ struct InstalledView: View {
                 EmptyStateView(
                     symbol: "hourglass",
                     title: "Loading installed packages",
-                    message: "BrewDesk is reading Homebrew's local package list. No installation or update is being run."
+                    message: "Purge is reading Homebrew's local package list. No installation or update is being run."
                 )
             } else if !homebrew.hasLoadedPackages && homebrew.packagesError == nil {
                 EmptyStateView(
                     symbol: "shippingbox",
                     title: "Loading your package library",
-                    message: "BrewDesk will query Homebrew when this screen opens. Use Refresh to retry if needed."
+                    message: "Purge will query Homebrew when this screen opens. Use Refresh to retry if needed."
                 )
             } else if filteredPackages.isEmpty {
                 EmptyStateView(
@@ -290,7 +290,7 @@ struct InstalledView: View {
                 EmptyStateView(
                     symbol: "hourglass",
                     title: "Loading services",
-                    message: "BrewDesk is running `brew services list` to discover registered services."
+                    message: "Purge is running `brew services list` to discover registered services."
                 )
             } else if filteredServices.isEmpty {
                 EmptyStateView(

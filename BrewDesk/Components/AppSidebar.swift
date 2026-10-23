@@ -14,7 +14,7 @@ struct AppSidebar: View {
                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("BrewDesk")
+                    Text("Purge")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                     Text("Mac utilities")

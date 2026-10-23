@@ -143,7 +143,7 @@ struct PortsView: View {
                     EmptyStateView(
                         symbol: "hourglass",
                         title: "Scanning listening ports",
-                        message: "BrewDesk is inspecting open network sockets with `lsof`."
+                        message: "Purge is inspecting open network sockets with `lsof`."
                     )
                 } else if filteredPorts.isEmpty {
                     EmptyStateView(

@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "000000000000000100000000"
-               BuildableName = "BrewDesk.app"
-               BlueprintName = "BrewDesk"
+               BuildableName = "Purge.app"
+               BlueprintName = "Purge"
                ReferencedContainer = "container:BrewDesk.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
-            BuildableName = "BrewDesk.app"
-            BlueprintName = "BrewDesk"
+            BuildableName = "Purge.app"
+            BlueprintName = "Purge"
             ReferencedContainer = "container:BrewDesk.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "000000000000000100000000"
-            BuildableName = "BrewDesk.app"
-            BlueprintName = "BrewDesk"
+            BuildableName = "Purge.app"
+            BlueprintName = "Purge"
             ReferencedContainer = "container:BrewDesk.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
