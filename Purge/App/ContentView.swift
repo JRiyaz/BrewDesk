@@ -68,6 +68,8 @@ struct ContentView: View {
             PortsView(searchText: searchText)
         case .systemCleaner:
             SystemCleanerView(searchText: searchText)
+        case .uninstallGuide:
+            AppUninstallGuideView(searchText: searchText)
         case .mole:
             MoleView(searchText: searchText, moleStore: moleStore)
         case .commands:

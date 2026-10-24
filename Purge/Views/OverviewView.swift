@@ -93,7 +93,7 @@ struct OverviewView: View {
             }
             
             VStack(alignment: .leading, spacing: 13) {
-                SectionCaption(title: "Your toolkit", trailing: "9 tools")
+                SectionCaption(title: "Your toolkit", trailing: "10 tools")
                 LazyVGrid(columns: featureColumns, alignment: .leading, spacing: 12) {
                     FeatureTile(section: .installed, detail: "Browse formulae and casks installed locally") { onNavigate(.installed) }
                     FeatureTile(section: .services, detail: "Manage background services and daemons") { onNavigate(.services) }
@@ -104,6 +104,7 @@ struct OverviewView: View {
                     FeatureTile(section: .commands, detail: "Browse and copy common commands") { onNavigate(.commands) }
                     FeatureTile(section: .ports, detail: "Inspect listening ports and owners") { onNavigate(.ports) }
                     FeatureTile(section: .systemCleaner, detail: "Reclaim space from logs, Trash, and Xcode") { onNavigate(.systemCleaner) }
+                    FeatureTile(section: .uninstallGuide, detail: "Step-by-step app removal with commands and paths") { onNavigate(.uninstallGuide) }
                 }
             }
             
