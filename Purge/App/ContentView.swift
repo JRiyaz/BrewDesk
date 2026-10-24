@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var installedFilter: InstalledFilter = .all
     @StateObject private var homebrew = HomebrewStore()
+    @StateObject private var moleStore = MoleStore()
     
     var body: some View {
         NavigationSplitView {
@@ -54,7 +55,7 @@ struct ContentView: View {
     private var pageContent: some View {
         switch selection {
         case .overview:
-            OverviewView(onNavigate: navigate, homebrew: homebrew)
+            OverviewView(onNavigate: navigate, homebrew: homebrew, moleStore: moleStore)
         case .installed, .services:
             InstalledView(searchText: searchText, homebrew: homebrew, selectedFilter: $installedFilter)
         case .discover:
@@ -67,6 +68,8 @@ struct ContentView: View {
             PortsView(searchText: searchText)
         case .systemCleaner:
             SystemCleanerView(searchText: searchText)
+        case .mole:
+            MoleView(searchText: searchText, moleStore: moleStore)
         case .commands:
             CommandsView(searchText: searchText)
         case .settings:

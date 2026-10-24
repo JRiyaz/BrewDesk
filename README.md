@@ -34,6 +34,15 @@ Purge is a modern, native macOS utility for managing Homebrew packages, backgrou
   - Curated catalogue of essential Homebrew commands with instant search and 1-click clipboard copying.
 
 ### 🛠️ Utilities
+- **Mole Integration:**
+  - Full native UI for [Mole](https://github.com/tw93/mole) deep system cleaning and optimization.
+  - **System Clean:** Clean caches, logs, temporary files, and uninstalled app debris (`mo clean`).
+  - **System Optimization:** Refresh services, flush DNS, and repair maintenance issues (`mo optimize`).
+  - **Project Purge:** Purge dormant project artifacts like `node_modules`, `target`, and build folders (`mo purge`).
+  - **Installer Sweep:** Remove forgotten `.dmg`, `.pkg`, and `.iso` installers (`mo installer`).
+  - **App Slimmer:** Strip Intel x86 code from universal apps on Apple Silicon (`mo slim`).
+  - **System Vitals:** Monitor disk, memory, CPU load, thermals, and battery in real time (`mo status`).
+  - **Live Console & Terminal:** Run safe dry-run previews in-app or launch interactive commands in Terminal.
 - **Listening Ports:**
   - Real-time inspection of active TCP listening ports on your Mac using `lsof`.
   - Filter by **All**, **User / Apps** (e.g. Angular, Vite, Node, Flask), or **System daemons**.

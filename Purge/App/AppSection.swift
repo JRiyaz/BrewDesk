@@ -10,6 +10,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
     case commands
     case ports
     case systemCleaner
+    case mole
     case settings
     
     var id: String { rawValue }
@@ -25,6 +26,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .commands: "Commands"
         case .ports: "Ports"
         case .systemCleaner: "System Cleaner"
+        case .mole: "Mole"
         case .settings: "Settings"
         }
     }
@@ -40,6 +42,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .commands: "terminal"
         case .ports: "point.3.connected.trianglepath.dotted"
         case .systemCleaner: "internaldrive"
+        case .mole: "wand.and.stars"
         case .settings: "gearshape"
         }
     }
@@ -55,13 +58,14 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .commands: "Find and copy common Homebrew commands."
         case .ports: "See what is listening on your Mac."
         case .systemCleaner: "Reclaim disk space from caches, logs, and development stores."
+        case .mole: "Deep clean, optimize, and monitor your Mac."
         case .settings: "Make Purge feel right for you."
         }
     }
     
     var supportsSearch: Bool {
         switch self {
-        case .installed, .services, .discover, .ports, .commands, .systemCleaner: true
+        case .installed, .services, .discover, .ports, .commands, .systemCleaner, .mole: true
         default: false
         }
     }

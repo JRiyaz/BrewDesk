@@ -18,8 +18,13 @@ final class CleanerService: ObservableObject {
     @Published private(set) var autoremoveItems: [CleanableItem] = []
     @Published private(set) var cleanupItems: [CleanableItem] = []
     @Published private(set) var cachedBottleItems: [CleanableItem] = []
+    @Published private(set) var serviceLogItems: [CleanableItem] = []
+    @Published private(set) var installerItems: [CleanableItem] = []
     
     @Published private(set) var cacheSizeBytes: Int64 = 0
+    @Published private(set) var serviceLogsSizeBytes: Int64 = 0
+    @Published private(set) var installerSizeBytes: Int64 = 0
+    
     @Published private(set) var isScanning = false
     @Published private(set) var isCleaning = false
     @Published private(set) var activeAction: String?
@@ -28,9 +33,19 @@ final class CleanerService: ObservableObject {
     @Published private(set) var lastAutoremoveAt: Date?
     @Published private(set) var lastCleanedAt: Date?
     @Published private(set) var lastPrunedAt: Date?
+    @Published private(set) var lastServiceLogsCleanedAt: Date?
+    @Published private(set) var lastInstallerSweepAt: Date?
     
     var cacheFormattedSize: String {
         ByteCountFormatter.string(fromByteCount: cacheSizeBytes, countStyle: .file)
+    }
+    
+    var serviceLogsFormattedSize: String {
+        ByteCountFormatter.string(fromByteCount: serviceLogsSizeBytes, countStyle: .file)
+    }
+    
+    var installerFormattedSize: String {
+        ByteCountFormatter.string(fromByteCount: installerSizeBytes, countStyle: .file)
     }
     
     // Backward-compatible alias
@@ -46,6 +61,12 @@ final class CleanerService: ObservableObject {
         
         // 1. Scan the cache folder directly
         scanCacheDirectory(using: installation)
+        
+        // 2. Scan Homebrew background service logs (Mole monitored)
+        scanServiceLogs(using: installation)
+        
+        // 3. Scan Homebrew cask installer media (.dmg, .pkg, .iso, .zip)
+        scanInstallerFiles()
         
         guard let installation else {
             lastScannedAt = Date()
@@ -173,12 +194,60 @@ final class CleanerService: ObservableObject {
         }
     }
     
+    func purgeServiceLogs(using installation: HomebrewInstallation?) async -> Bool {
+        guard !isCleaning else { return false }
+        isCleaning = true
+        activeAction = "Purging Homebrew background service logs…"
+        cleanerError = nil
+        defer {
+            isCleaning = false
+            activeAction = nil
+        }
+        
+        let fm = FileManager.default
+        for item in serviceLogItems {
+            if fm.fileExists(atPath: item.path) {
+                do {
+                    try "".write(toFile: item.path, atomically: true, encoding: .utf8)
+                } catch {
+                    try? fm.removeItem(atPath: item.path)
+                }
+            }
+        }
+        
+        self.lastServiceLogsCleanedAt = Date()
+        await scanAll(using: installation)
+        return true
+    }
+    
+    func sweepInstallerFiles(using installation: HomebrewInstallation?) async -> Bool {
+        guard !isCleaning else { return false }
+        isCleaning = true
+        activeAction = "Sweeping cached Homebrew cask installers…"
+        cleanerError = nil
+        defer {
+            isCleaning = false
+            activeAction = nil
+        }
+        
+        let fm = FileManager.default
+        for item in installerItems {
+            try? fm.removeItem(atPath: item.path)
+        }
+        
+        self.lastInstallerSweepAt = Date()
+        await scanAll(using: installation)
+        return true
+    }
+    
     func deleteItem(_ item: CleanableItem) {
         do {
             try FileManager.default.removeItem(atPath: item.path)
             cleanupItems.removeAll { $0.id == item.id }
             cachedBottleItems.removeAll { $0.id == item.id }
             autoremoveItems.removeAll { $0.id == item.id }
+            serviceLogItems.removeAll { $0.id == item.id }
+            installerItems.removeAll { $0.id == item.id }
         } catch {
             cleanerError = "Failed to remove \(item.name): \(error.localizedDescription)"
         }
@@ -307,5 +376,104 @@ final class CleanerService: ObservableObject {
         }
         
         return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+    
+    // MARK: - Mole-monitored Homebrew Service Logs & Installers
+    
+    private func scanServiceLogs(using installation: HomebrewInstallation?) {
+        let fm = FileManager.default
+        let prefix = installation?.prefix ?? (fm.fileExists(atPath: "/opt/homebrew") ? "/opt/homebrew" : "/usr/local")
+        let logDir = "\(prefix)/var/log"
+        
+        guard fm.fileExists(atPath: logDir) else {
+            self.serviceLogItems = []
+            self.serviceLogsSizeBytes = 0
+            return
+        }
+        
+        var total: Int64 = 0
+        var items: [CleanableItem] = []
+        let logURL = URL(fileURLWithPath: logDir)
+        let propertyKeys: [URLResourceKey] = [.fileSizeKey, .isDirectoryKey]
+        let resourceKeys: Set<URLResourceKey> = [.fileSizeKey, .isDirectoryKey]
+        
+        if let enumerator = fm.enumerator(
+            at: logURL,
+            includingPropertiesForKeys: propertyKeys,
+            options: [.skipsHiddenFiles]
+        ) {
+            while let fileURL = enumerator.nextObject() as? URL {
+                guard let values = try? fileURL.resourceValues(forKeys: resourceKeys),
+                      let isDir = values.isDirectory, !isDir,
+                      let size = values.fileSize, size > 0 else { continue }
+                
+                let relPath = fileURL.path.replacingOccurrences(of: logDir + "/", with: "")
+                let sizeStr = ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+                total += Int64(size)
+                
+                items.append(
+                    CleanableItem(
+                        id: fileURL.path,
+                        path: fileURL.path,
+                        name: relPath,
+                        sizeString: sizeStr,
+                        category: "Service Log"
+                    )
+                )
+            }
+        }
+        
+        self.serviceLogItems = items.sorted { $0.path < $1.path }
+        self.serviceLogsSizeBytes = total
+    }
+    
+    private func scanInstallerFiles() {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser.path
+        let candidateDirs = [
+            "\(home)/Library/Caches/Homebrew/downloads",
+            "\(home)/Library/Caches/Homebrew/Cask"
+        ]
+        let installerExts = ["dmg", "pkg", "iso", "zip", "xip"]
+        let propertyKeys: [URLResourceKey] = [.fileSizeKey, .isDirectoryKey]
+        let resourceKeys: Set<URLResourceKey> = [.fileSizeKey, .isDirectoryKey]
+        
+        var total: Int64 = 0
+        var items: [CleanableItem] = []
+        
+        for dir in candidateDirs {
+            guard fm.fileExists(atPath: dir) else { continue }
+            let dirURL = URL(fileURLWithPath: dir)
+            if let enumerator = fm.enumerator(
+                at: dirURL,
+                includingPropertiesForKeys: propertyKeys,
+                options: [.skipsHiddenFiles]
+            ) {
+                while let fileURL = enumerator.nextObject() as? URL {
+                    guard let values = try? fileURL.resourceValues(forKeys: resourceKeys),
+                          let isDir = values.isDirectory, !isDir,
+                          let size = values.fileSize, size > 0 else { continue }
+                    
+                    let ext = fileURL.pathExtension.lowercased()
+                    let fileName = fileURL.lastPathComponent
+                    if installerExts.contains(ext) || fileName.contains(".dmg") || fileName.contains(".pkg") {
+                        let sizeStr = ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+                        total += Int64(size)
+                        items.append(
+                            CleanableItem(
+                                id: fileURL.path,
+                                path: fileURL.path,
+                                name: fileName,
+                                sizeString: sizeStr,
+                                category: "Cask Installer (\(ext.uppercased()))"
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        
+        self.installerItems = items.sorted { $0.path < $1.path }
+        self.installerSizeBytes = total
     }
 }

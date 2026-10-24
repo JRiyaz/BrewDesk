@@ -4,15 +4,26 @@ enum CleanerSection: String, CaseIterable, Identifiable {
     case autoremove = "Autoremove"
     case clean = "Clean"
     case purgeCache = "Purge cache"
+    case serviceLogs = "Service Logs"
+    case installerSweep = "Installer Sweep"
     
     var id: String { rawValue }
     var title: String { rawValue }
+    
+    var isMolePowered: Bool {
+        switch self {
+        case .serviceLogs, .installerSweep: return true
+        default: return false
+        }
+    }
     
     var symbol: String {
         switch self {
         case .autoremove: return "xmark.bin"
         case .clean: return "sparkles"
         case .purgeCache: return "flame"
+        case .serviceLogs: return "doc.text.magnifyingglass"
+        case .installerSweep: return "archivebox"
         }
     }
     
@@ -21,6 +32,8 @@ enum CleanerSection: String, CaseIterable, Identifiable {
         case .autoremove: return "Orphaned dependencies"
         case .clean: return "Outdated packages & locks"
         case .purgeCache: return "Wipe active bottle cache"
+        case .serviceLogs: return "Mole service log purge"
+        case .installerSweep: return "Mole installer sweep"
         }
     }
     
@@ -29,6 +42,8 @@ enum CleanerSection: String, CaseIterable, Identifiable {
         case .autoremove: return "brew autoremove"
         case .clean: return "brew cleanup"
         case .purgeCache: return "brew cleanup --prune=all"
+        case .serviceLogs: return "mo clean"
+        case .installerSweep: return "mo installer"
         }
     }
 }
@@ -140,10 +155,19 @@ struct CleanerView: View {
             HStack(spacing: 8) {
                 Image(systemName: selectedSection.symbol)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppTheme.accent)
+                    .foregroundStyle(selectedSection.isMolePowered ? Color.purple : AppTheme.accent)
                 Text(selectedSection.title)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
+                
+                if selectedSection.isMolePowered {
+                    Text("MOLE")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2.5)
+                        .background(Color.purple.opacity(0.18), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        .foregroundStyle(Color.purple)
+                }
             }
             
             Text(sectionDescription)
@@ -223,6 +247,52 @@ struct CleanerView: View {
                     detail: "Wipes all cached downloads",
                     symbol: "terminal",
                     tint: AppTheme.warning
+                )
+                
+            case .serviceLogs:
+                MetricCard(
+                    title: "Service log files",
+                    value: cleaner.serviceLogItems.isEmpty ? "Clean" : "\(cleaner.serviceLogItems.count) logs",
+                    detail: cleaner.serviceLogItems.isEmpty ? "All logs within normal limits" : "Found in /opt/homebrew/var/log",
+                    symbol: "doc.text",
+                    tint: cleaner.serviceLogItems.isEmpty ? AppTheme.success : Color.purple
+                )
+                MetricCard(
+                    title: "Total log size",
+                    value: cleaner.serviceLogsFormattedSize,
+                    detail: "Nginx, Redis, Postgres, MySQL",
+                    symbol: "internaldrive",
+                    tint: cleaner.serviceLogsSizeBytes > 0 ? Color.purple : AppTheme.success
+                )
+                MetricCard(
+                    title: "CLI Command",
+                    value: "mo clean",
+                    detail: "Mole log inspection & purge",
+                    symbol: "terminal",
+                    tint: Color.purple
+                )
+                
+            case .installerSweep:
+                MetricCard(
+                    title: "Installer packages",
+                    value: cleaner.installerItems.isEmpty ? "None" : "\(cleaner.installerItems.count) files",
+                    detail: cleaner.installerItems.isEmpty ? "No leftover .dmg/.pkg in cache" : "Orphaned installer media",
+                    symbol: "archivebox",
+                    tint: cleaner.installerItems.isEmpty ? AppTheme.success : Color.purple
+                )
+                MetricCard(
+                    title: "Recoverable space",
+                    value: cleaner.installerFormattedSize,
+                    detail: "Cached Cask installers",
+                    symbol: "arrow.down.circle",
+                    tint: cleaner.installerSizeBytes > 0 ? Color.purple : AppTheme.success
+                )
+                MetricCard(
+                    title: "CLI Command",
+                    value: "mo installer",
+                    detail: "Mole installer sweeper",
+                    symbol: "terminal",
+                    tint: Color.purple
                 )
             }
         }
@@ -370,6 +440,39 @@ struct CleanerView: View {
                 } else {
                     itemList(cleaner.cachedBottleItems)
                 }
+            case .serviceLogs:
+                if cleaner.isScanning && cleaner.serviceLogItems.isEmpty {
+                    EmptyStateView(
+                        symbol: "hourglass",
+                        title: "Scanning Homebrew service logs",
+                        message: "Inspecting /var/log directories for background services managed by Homebrew."
+                    )
+                } else if cleaner.serviceLogItems.isEmpty {
+                    EmptyStateView(
+                        symbol: "checkmark.seal",
+                        title: "Homebrew service logs are clean",
+                        message: "No bloated background service logs detected in your Homebrew var/log directory."
+                    )
+                } else {
+                    itemList(cleaner.serviceLogItems)
+                }
+                
+            case .installerSweep:
+                if cleaner.isScanning && cleaner.installerItems.isEmpty {
+                    EmptyStateView(
+                        symbol: "hourglass",
+                        title: "Scanning Homebrew installer cache",
+                        message: "Searching ~/Library/Caches/Homebrew for leftover .dmg, .pkg, and .zip installers."
+                    )
+                } else if cleaner.installerItems.isEmpty {
+                    EmptyStateView(
+                        symbol: "checkmark.seal",
+                        title: "No leftover installer media",
+                        message: "There are no orphaned cask installer images (.dmg, .pkg) in Homebrew caches."
+                    )
+                } else {
+                    itemList(cleaner.installerItems)
+                }
             }
         }
         .background(AppTheme.panel, in: AppTheme.cardShape)
@@ -451,6 +554,10 @@ struct CleanerView: View {
             return cleaner.cleanupItems.isEmpty ? "Clean" : "\(cleaner.cleanupItems.count) items"
         case .purgeCache:
             return cleaner.cacheSizeBytes > 0 ? cleaner.cacheFormattedSize : "0 B"
+        case .serviceLogs:
+            return cleaner.serviceLogItems.isEmpty ? "Clean" : "\(cleaner.serviceLogItems.count) logs"
+        case .installerSweep:
+            return cleaner.installerItems.isEmpty ? "Clean" : cleaner.installerFormattedSize
         }
     }
     
@@ -462,6 +569,10 @@ struct CleanerView: View {
             return "Homebrew downloads formula bottles and cask installers into cache folders. Over time, previous versions accumulate. Clean removes outdated downloads and stale lockfiles while keeping active software untouched."
         case .purgeCache:
             return "Homebrew retains downloaded archives for your active packages in ~/Library/Caches/Homebrew so they don't need re-downloading if reinstalled. Purge completely clears this archive store to maximize free disk space."
+        case .serviceLogs:
+            return "Homebrew background daemons (such as Nginx, Redis, PostgreSQL, MySQL) write persistent log files into $(brew --prefix)/var/log. Over months, these logs can grow into gigabytes. Mole inspects and safely purges stale service logs."
+        case .installerSweep:
+            return "When installing casks, Homebrew downloads disk images (.dmg), packages (.pkg), and installer archives. Mole scans Homebrew's download caches and sweeps these leftover installer media to reclaim disk space."
         }
     }
     
@@ -470,6 +581,8 @@ struct CleanerView: View {
         case .autoremove: return "PACKAGE / DEPENDENCY"
         case .clean: return "CLEANABLE ITEM / FILE"
         case .purgeCache: return "CACHED ARCHIVE / FEED"
+        case .serviceLogs: return "SERVICE LOG FILE"
+        case .installerSweep: return "INSTALLER ARCHIVE"
         }
     }
     
@@ -478,6 +591,8 @@ struct CleanerView: View {
         case .autoremove: return "Run Autoremove"
         case .clean: return "Clean Homebrew"
         case .purgeCache: return "Purge All Cache"
+        case .serviceLogs: return "Purge Service Logs (Mole)"
+        case .installerSweep: return "Sweep Installers (Mole)"
         }
     }
     
@@ -489,6 +604,10 @@ struct CleanerView: View {
             return cleaner.cleanupItems.isEmpty && cleaner.cacheSizeBytes == 0
         case .purgeCache:
             return cleaner.cacheSizeBytes == 0
+        case .serviceLogs:
+            return cleaner.serviceLogItems.isEmpty
+        case .installerSweep:
+            return cleaner.installerItems.isEmpty
         }
     }
     
@@ -497,6 +616,8 @@ struct CleanerView: View {
         case .autoremove: return "Run Homebrew Autoremove?"
         case .clean: return "Run Homebrew Cleanup?"
         case .purgeCache: return "Purge All Homebrew Cache?"
+        case .serviceLogs: return "Purge Homebrew Service Logs?"
+        case .installerSweep: return "Sweep Leftover Cask Installers?"
         }
     }
     
@@ -505,6 +626,8 @@ struct CleanerView: View {
         case .autoremove: return "Autoremove Unneeded Packages"
         case .clean: return "Clean Outdated Files"
         case .purgeCache: return "Purge Entire Cache"
+        case .serviceLogs: return "Purge Service Logs"
+        case .installerSweep: return "Sweep Installer Files"
         }
     }
     
@@ -516,6 +639,10 @@ struct CleanerView: View {
             return "Purge will run `brew cleanup` to safely remove superseded package downloads, old versions, and stale lockfiles. Your installed software will remain intact."
         case .purgeCache:
             return "Purge will run `brew cleanup --prune=all` to delete all bottle downloads and cached archives in ~/Library/Caches/Homebrew (\(cleaner.cacheFormattedSize)). Homebrew will re-download files if needed in the future."
+        case .serviceLogs:
+            return "Purge will safely truncate and clear Homebrew background service log files (\(cleaner.serviceLogsFormattedSize)) in $(brew --prefix)/var/log, keeping your service configurations intact."
+        case .installerSweep:
+            return "Purge will sweep leftover .dmg and .pkg installer files (\(cleaner.installerFormattedSize)) downloaded by Homebrew casks to free disk storage."
         }
     }
     
@@ -528,6 +655,10 @@ struct CleanerView: View {
                 _ = await cleaner.runCleanup(using: homebrew.installation)
             case .purgeCache:
                 _ = await cleaner.pruneAllCache(using: homebrew.installation)
+            case .serviceLogs:
+                _ = await cleaner.purgeServiceLogs(using: homebrew.installation)
+            case .installerSweep:
+                _ = await cleaner.sweepInstallerFiles(using: homebrew.installation)
             }
         }
     }
@@ -547,14 +678,25 @@ private struct CleanerSectionCard: View {
             HStack(spacing: 12) {
                 Image(systemName: section.symbol)
                     .font(.system(size: 15, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? AppTheme.accent : .secondary)
+                    .foregroundStyle(isSelected ? (section.isMolePowered ? Color.purple : AppTheme.accent) : .secondary)
                     .frame(width: 30, height: 30)
-                    .background(isSelected ? AppTheme.accent.opacity(0.12) : AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(isSelected ? (section.isMolePowered ? Color.purple.opacity(0.12) : AppTheme.accent.opacity(0.12)) : AppTheme.subtleFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(section.title)
-                        .font(.system(size: 13, weight: isSelected ? .bold : .semibold, design: .rounded))
-                        .foregroundStyle(isSelected ? .primary : .secondary)
+                    HStack(spacing: 6) {
+                        Text(section.title)
+                            .font(.system(size: 13, weight: isSelected ? .bold : .semibold, design: .rounded))
+                            .foregroundStyle(isSelected ? .primary : .secondary)
+                        
+                        if section.isMolePowered {
+                            Text("MOLE")
+                                .font(.system(size: 8, weight: .bold))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1.5)
+                                .background(Color.purple.opacity(0.18), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                                .foregroundStyle(Color.purple)
+                        }
+                    }
                     
                     Text(section.subtitle)
                         .font(.system(size: 10))
@@ -566,16 +708,16 @@ private struct CleanerSectionCard: View {
                 
                 Text(badgeText)
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(isSelected ? AppTheme.accent : (isWarning ? AppTheme.warning : .secondary))
+                    .foregroundStyle(isSelected ? (section.isMolePowered ? Color.purple : AppTheme.accent) : (isWarning ? AppTheme.warning : .secondary))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .background(isSelected ? AppTheme.accent.opacity(0.12) : AppTheme.subtleFill, in: Capsule())
+                    .background(isSelected ? (section.isMolePowered ? Color.purple.opacity(0.12) : AppTheme.accent.opacity(0.12)) : AppTheme.subtleFill, in: Capsule())
             }
             .padding(12)
             .background(isSelected ? AppTheme.panel : AppTheme.canvas, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(isSelected ? AppTheme.accent.opacity(0.35) : AppTheme.separator, lineWidth: isSelected ? 1.2 : 0.8)
+                    .strokeBorder(isSelected ? (section.isMolePowered ? Color.purple.opacity(0.4) : AppTheme.accent.opacity(0.35)) : AppTheme.separator, lineWidth: isSelected ? 1.2 : 0.8)
             )
         }
         .buttonStyle(.plain)

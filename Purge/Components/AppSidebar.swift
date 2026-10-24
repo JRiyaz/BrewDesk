@@ -35,6 +35,13 @@ struct AppSidebar: View {
             }
             
             VStack(alignment: .leading, spacing: 6) {
+                SidebarGroupLabel(title: "MOLE")
+                SidebarItem(section: .mole, isSelected: selection == .mole) {
+                    selection = .mole
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 6) {
                 SidebarGroupLabel(title: "UTILITIES")
                 ForEach(AppSection.utilities) { section in
                     SidebarItem(section: section, isSelected: selection == section) {

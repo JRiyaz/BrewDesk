@@ -4,6 +4,7 @@ import SwiftUI
 struct OverviewView: View {
     let onNavigate: (AppSection) -> Void
     @ObservedObject var homebrew: HomebrewStore
+    @ObservedObject var moleStore: MoleStore
     @State private var checkGeneration = 0
     
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -47,24 +48,72 @@ struct OverviewView: View {
             }
             
             VStack(alignment: .leading, spacing: 13) {
-                SectionCaption(title: "Your toolkit", trailing: "8 tools")
+                HStack {
+                    SectionCaption(
+                        title: "Mole System Vitals",
+                        trailing: moleStore.installation != nil ? "v\(moleStore.installation!.version)" : (moleStore.isChecking ? "Checking…" : "Not installed")
+                    )
+                    Spacer()
+                    Button {
+                        onNavigate(.mole)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Open Mole")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(AppTheme.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                LazyVGrid(columns: columns, spacing: 12) {
+                    MetricCard(
+                        title: "Disk space",
+                        value: moleStore.vitals?.diskAvailable ?? "Available",
+                        detail: (moleStore.vitals?.disk != "Unknown" && !(moleStore.vitals?.disk.isEmpty ?? true)) ? moleStore.vitals!.disk : "Local APFS storage",
+                        symbol: "internaldrive",
+                        statusSymbol: "checkmark.circle.fill"
+                    )
+                    MetricCard(
+                        title: "Active memory",
+                        value: moleStore.vitals?.memoryUsage ?? "Active RAM",
+                        detail: (moleStore.vitals?.memory != "Unknown" && !(moleStore.vitals?.memory.isEmpty ?? true)) ? moleStore.vitals!.memory : "Physical system RAM",
+                        symbol: "memorychip",
+                        statusSymbol: "checkmark.circle.fill"
+                    )
+                    MetricCard(
+                        title: "Thermals & battery",
+                        value: moleStore.vitals?.thermal ?? "Nominal",
+                        detail: (moleStore.vitals?.battery != "Unknown" && !(moleStore.vitals?.battery.isEmpty ?? true)) ? moleStore.vitals!.battery : (moleStore.isInstalled ? "Sensors nominal" : "Run 'brew install mole'"),
+                        symbol: "bolt.badge.checkmark",
+                        statusSymbol: moleStore.isInstalled ? "checkmark.circle.fill" : "circle.dashed"
+                    )
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: 13) {
+                SectionCaption(title: "Your toolkit", trailing: "9 tools")
                 LazyVGrid(columns: featureColumns, alignment: .leading, spacing: 12) {
                     FeatureTile(section: .installed, detail: "Browse formulae and casks installed locally") { onNavigate(.installed) }
                     FeatureTile(section: .services, detail: "Manage background services and daemons") { onNavigate(.services) }
                     FeatureTile(section: .discover, detail: "Search the online Homebrew catalogue") { onNavigate(.discover) }
                     FeatureTile(section: .updates, detail: "Review pending package updates") { onNavigate(.updates) }
                     FeatureTile(section: .cleaner, detail: "Review caches and leftovers safely") { onNavigate(.cleaner) }
+                    FeatureTile(section: .mole, detail: "Deep clean, optimize, and project purge") { onNavigate(.mole) }
                     FeatureTile(section: .commands, detail: "Browse and copy common commands") { onNavigate(.commands) }
                     FeatureTile(section: .ports, detail: "Inspect listening ports and owners") { onNavigate(.ports) }
                     FeatureTile(section: .systemCleaner, detail: "Reclaim space from logs, Trash, and Xcode") { onNavigate(.systemCleaner) }
                 }
             }
             
-            
         }
         .task(id: checkGeneration) {
             if checkGeneration > 0 || (homebrew.installation == nil && homebrew.installationError == nil) {
                 await homebrew.checkInstallation()
+            }
+            if !moleStore.hasChecked {
+                await moleStore.checkInstallation()
             }
         }
     }
@@ -136,7 +185,7 @@ struct OverviewView: View {
                     .foregroundStyle(.primary)
                     .lineSpacing(2)
                 
-                Text("A quiet, native companion for Homebrew. Review packages, inspect listening ports, and run maintenance only when you choose.")
+                Text("A quiet, native companion for Homebrew and Mole. Review packages, inspect listening ports, and run deep system optimization when you choose.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .lineSpacing(2)

@@ -8,6 +8,10 @@ struct InstalledView: View {
     @State private var refreshGeneration = 0
     @State private var hasCopiedCommand = false
     @State private var copiedServiceID: String?
+    @State private var caskToUninstall: HomebrewPackage?
+    @State private var showCaskConfirmation = false
+    @State private var isUninstallingCask = false
+    @State private var uninstallSuccessMessage: String?
     
     init(
         searchText: String,
@@ -136,13 +140,31 @@ struct InstalledView: View {
                 )
             }
             
+            if let msg = uninstallSuccessMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(AppTheme.success)
+                    Text(msg)
+                        .font(.system(size: 12, weight: .medium))
+                    Spacer()
+                    Button {
+                        uninstallSuccessMessage = nil
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(10)
+                .background(AppTheme.success.opacity(0.1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            
             if selectedFilter == .services {
                 servicesTable
             } else {
                 packagesTable
             }
-            
-            
         }
         .task(id: refreshGeneration) {
             if selectedFilter == .services {
@@ -150,6 +172,24 @@ struct InstalledView: View {
             } else {
                 await homebrew.loadInstalledPackages()
             }
+        }
+        .confirmationDialog(
+            "Deep Uninstall \(caskToUninstall?.name ?? "Cask") with Mole?",
+            isPresented: $showCaskConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Uninstall & Scrub Leftovers", role: .destructive) {
+                if let target = caskToUninstall {
+                    Task {
+                        await performCaskUninstall(target)
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                caskToUninstall = nil
+            }
+        } message: {
+            Text("Mole will run `brew uninstall --cask \(caskToUninstall?.name ?? "")` and completely sweep leftover caches, support files, and preference containers from your user Library.")
         }
         .task(id: selectedFilter) {
             if selectedFilter == .services && !homebrew.hasLoadedServices {
@@ -172,9 +212,10 @@ struct InstalledView: View {
             HStack {
                 Text("PACKAGE")
                 Spacer(minLength: 12)
-                Text("INSTALLATION").frame(width: 100, alignment: .leading)
-                Text("TYPE").frame(width: 80, alignment: .leading)
-                Text("VERSION").frame(width: 140, alignment: .leading)
+                Text("INSTALLATION").frame(width: 90, alignment: .leading)
+                Text("TYPE").frame(width: 70, alignment: .leading)
+                Text("VERSION").frame(width: 100, alignment: .leading)
+                Text("ACTIONS").frame(width: 135, alignment: .trailing)
             }
             .font(.system(size: 9, weight: .bold))
             .tracking(0.7)
@@ -237,7 +278,7 @@ struct InstalledView: View {
                                         .background(AppTheme.subtleFill, in: Capsule())
                                 }
                             }
-                            .frame(width: 100, alignment: .leading)
+                            .frame(width: 90, alignment: .leading)
                             
                             Text(package.kind.title)
                                 .font(.system(size: 10, weight: .medium))
@@ -245,14 +286,45 @@ struct InstalledView: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 5)
                                 .background(AppTheme.subtleFill, in: Capsule())
-                                .frame(width: 80, alignment: .leading)
+                                .frame(width: 70, alignment: .leading)
                             
                             Text(package.versionLabel)
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                                .frame(width: 140, alignment: .leading)
+                                .frame(width: 100, alignment: .leading)
+                            
+                            HStack(spacing: 6) {
+                                if package.kind == .cask {
+                                    Button {
+                                        caskToUninstall = package
+                                        showCaskConfirmation = true
+                                    } label: {
+                                        HStack(spacing: 3) {
+                                            Text("MOLE")
+                                                .font(.system(size: 7.5, weight: .bold))
+                                                .padding(.horizontal, 4)
+                                                .padding(.vertical, 1.5)
+                                                .background(Color.purple.opacity(0.18), in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+                                                .foregroundStyle(Color.purple)
+                                            Image(systemName: "trash")
+                                                .font(.system(size: 9))
+                                            Text("Uninstall")
+                                                .font(.system(size: 10.5, weight: .medium))
+                                        }
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                    .help("Deep uninstall Cask and scrub residual files with Mole")
+                                }
+                                
+                                CopyCommandButton(
+                                    command: package.kind == .cask ? "mo uninstall \(package.name)" : "brew uninstall \(package.name)",
+                                    size: 24
+                                )
+                            }
+                            .frame(width: 135, alignment: .trailing)
                         }
                         .padding(.horizontal, 18)
                         .padding(.vertical, 12)
@@ -267,6 +339,44 @@ struct InstalledView: View {
         }
         .background(AppTheme.panel, in: AppTheme.cardShape)
         .overlay(AppTheme.cardShape.strokeBorder(AppTheme.separator, lineWidth: 0.8))
+    }
+    
+    private func performCaskUninstall(_ package: HomebrewPackage) async {
+        isUninstallingCask = true
+        defer { isUninstallingCask = false }
+        
+        let molePath = MoleStore.findExecutablePath()
+        if let molePath {
+            let execURL = URL(fileURLWithPath: molePath)
+            _ = try? await ProcessRunner.run(
+                executableURL: execURL,
+                arguments: ["uninstall", "--permanent", package.name],
+                timeout: 90
+            )
+        } else if let brewPath = homebrew.installation?.executablePath {
+            let execURL = URL(fileURLWithPath: brewPath)
+            _ = try? await ProcessRunner.run(
+                executableURL: execURL,
+                arguments: ["uninstall", "--cask", "--zap", package.name],
+                timeout: 90
+            )
+        }
+        
+        // Also scrub ~/Library candidate paths for leftovers
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser.path
+        let leftovers = [
+            "\(home)/Library/Caches/\(package.name)",
+            "\(home)/Library/Application Support/\(package.name)",
+            "\(home)/Library/Preferences/\(package.name).plist",
+            "\(home)/Library/Saved Application State/\(package.name).savedState"
+        ]
+        for p in leftovers {
+            try? fm.removeItem(atPath: p)
+        }
+        
+        uninstallSuccessMessage = "\(package.name) uninstalled and residual files cleaned."
+        await homebrew.loadInstalledPackages()
     }
     
     private var servicesTable: some View {

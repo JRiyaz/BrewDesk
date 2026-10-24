@@ -27,17 +27,20 @@ enum ProcessRunner {
     static func run(
         executableURL: URL,
         arguments: [String],
-        timeout: TimeInterval = 20
+        timeout: TimeInterval = 20,
+        inputData: Data? = nil
     ) async throws -> ProcessResult {
         try Task.checkCancellation()
         
         let process = Process()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
+        let stdinPipe = Pipe()
         process.executableURL = executableURL
         process.arguments = arguments
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
+        process.standardInput = stdinPipe
         process.environment = commandEnvironment()
         
         let timeoutMarker = TimeoutMarker()
@@ -51,6 +54,10 @@ enum ProcessRunner {
             try Task.checkCancellation()
             do {
                 try process.run()
+                if let inputData = inputData {
+                    stdinPipe.fileHandleForWriting.write(inputData)
+                    try? stdinPipe.fileHandleForWriting.close()
+                }
             } catch {
                 throw ProcessRunnerError.launchFailed(error.localizedDescription)
             }
